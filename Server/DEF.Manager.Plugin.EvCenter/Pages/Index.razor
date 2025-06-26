@@ -1,0 +1,41 @@
+﻿@using BootstrapBlazor.Components
+@using Microsoft.AspNetCore.Components
+@using System.Threading
+@implements IDisposable
+
+<p></p>
+<h6>事件中心首页</h6>
+<p></p>
+
+<Message @ref="MessageElement" />
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+</Row>
+
+<p></p>
+
+@code
+{
+	System.Threading.Timer Timer { get; set; }
+	Message MessageElement { get; set; }
+
+	protected override Task OnInitializedAsync()
+	{
+		Timer = new System.Threading.Timer(new TimerCallback(async _ =>
+		{
+			await InvokeAsync(() => { StateHasChanged(); });
+
+		}), null, 1000, 1000);
+
+		return Task.CompletedTask;
+	}
+
+	void IDisposable.Dispose()
+	{
+		if (Timer != null)
+		{
+			Timer.Dispose();
+			Timer = null;
+		}
+	}
+}

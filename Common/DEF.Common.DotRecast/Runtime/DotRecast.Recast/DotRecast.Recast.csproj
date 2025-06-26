@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <NoWarn>SYSLIB0023;MSB3243;MSB3539;CA2014;CS1998;CS0168;1701;1702;IDE1006</NoWarn>
+        <OutDir>../../../../_Tmp/DEF.Common.DotRecast.Recast/bin</OutDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\DotRecast.Core\DotRecast.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+		<Compile Remove="obj\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<None Remove="*.meta" />
+		<None Remove="*/*.meta" />
+		<None Remove="*/*/*.meta" />
+		<None Remove="*/*/*/*.meta" />
+		<None Remove="obj\**" />
+	</ItemGroup>
+
+</Project>

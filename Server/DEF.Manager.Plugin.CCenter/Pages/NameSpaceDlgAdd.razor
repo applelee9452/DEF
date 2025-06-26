@@ -1,0 +1,19 @@
+﻿<div class="row form-inline">
+    <div class="col-12">
+        <BootstrapInput @bind-Value="Value.NameSpace" ShowLabel="true" DisplayText="NameSpace" />
+    </div>
+</div>
+<p></p>
+
+<div class="row form-inline">
+    <div class="col-12">
+        <Textarea placeholder="请输入描述..." rows="5" @bind-Value="Value.Desc"></Textarea>
+    </div>
+</div>
+<p></p>
+
+@code
+{
+    [Parameter]
+    public DataNameSpace Value { get; set; }
+}

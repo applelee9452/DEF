@@ -1,0 +1,147 @@
+﻿@implements IDisposable
+@inject ManagerIM ManagerIM
+@inject ToastService ToastService
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Card>
+		<BodyTemplate>
+			<RComIMTarget @ref="RComIMTarget" />
+			<Row ItemsPerRow="ItemsPerRow.Three">
+				<BootstrapInput PlaceHolder="CDKey..." @bind-Value="@Value.Key" ShowLabel="true" DisplayText="CDKey" />
+			</Row>
+			<RComMail @ref="RComMail" />
+			<RComGoods @ref="RComGoods" />
+			<Row ItemsPerRow="ItemsPerRow.Twelve">
+				<Button IsBlock="true" Color="Color.Primary" Size="Size.Medium" Text="新建CDKey" OnClick="@OnClickButtonClose" />
+			</Row>
+		</BodyTemplate>
+	</Card>
+</Row>
+
+@code
+{
+	[Parameter]
+	public CDKey Value { get; set; }
+	RComIMTarget RComIMTarget;
+	RComMail RComMail;
+	RComGoods RComGoods;
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		var container = ManagerIM.ServiceClient.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+		var list = await container.GetRegionList();
+
+		Value.RegionIdList = [];
+		Value.PlayerIdList = [];
+		Value.CDKeyAttachmentList = RComGoods.AttachmentList;
+
+		StateHasChanged();
+	}
+
+	void HandleChange()
+	{
+		Value.MailTitle = RComMail.MailTitle;
+		Value.MailDesc = RComMail.MailDesc;
+	}
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		Value.MailTitle = RComMail.MailTitle;
+		Value.MailDesc = RComMail.MailDesc;
+	}
+
+	public async Task OnClickButtonClose()
+	{
+		bool t = await TryClose();
+	}
+
+	public async Task<bool> TryClose()
+	{
+		if (string.IsNullOrEmpty(Value.Key))
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "CDKey不能为空",
+					Content = "CDKey不能为空"
+				});
+
+			return false;
+		}
+
+		Value.Key = Value.Key.ToLower();
+
+		if (Value.CDKeyAttachmentList?.Count <= 0)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "附件物品不能空",
+					Content = "附件物品不能空"
+				});
+
+			return false;
+		}
+
+		if (Value.TargetType == IMTargetType.Region && Value.RegionIdList?.Count <= 0)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "分区发放 至少需要选一个分区",
+					Content = "分区发放 至少需要选一个分区"
+				});
+
+			return false;
+		}
+
+		if (Value.TargetType == IMTargetType.Player && Value.PlayerIdList?.Count <= 0)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "对玩家发放 需要至少填一个Player",
+					Content = "对玩家发放 需要至少填一个Player"
+				});
+
+			return false;
+		}
+
+		Value.CDKeyGuid = Guid.NewGuid().ToString();
+		Value.CreateDt = DateTime.UtcNow;
+		Value.ExpireDt = DateTime.UtcNow.AddMonths(1);
+
+		var container = ManagerIM.ServiceClient.GetContainerRpc<IContainerStatefulIMCDKeyMgr>();
+		var new_cdkey = await container.CreateCDKey(Value);
+
+		if (new_cdkey is null)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "保存失败",
+					Content = "可能 CDKey 重复了"
+				});
+
+			return false;
+		}
+
+		await ToastService.Show(new ToastOption()
+			{
+				Category = ToastCategory.Success,
+				Title = "成功通知",
+				Content = "新建CDKey成功！"
+			});
+
+		return true;
+	}
+
+	void IDisposable.Dispose()
+	{
+	}
+}

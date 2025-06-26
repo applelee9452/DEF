@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<RootNamespace>DEF.Manager</RootNamespace>
+		<Product>DEF</Product>
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BootstrapBlazor" Version="9.7.4" />
+		<PackageReference Include="BootstrapBlazor.Chart" Version="9.0.0" />
+		<PackageReference Include="BootstrapBlazor.TableExport" Version="9.2.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Common\DEF.IM.Interface\Runtime\DEF.IM.Interface\DEF.IM.Interface.csproj" />
+	  <ProjectReference Include="..\DEF.Manager.Plugin\DEF.Manager.Plugin.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Update="Pages\Console.razor">
+	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+	  </Content>
+	  <Content Update="Pages\SystemNotice.razor">
+	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+	  </Content>
+	</ItemGroup>
+
+</Project>

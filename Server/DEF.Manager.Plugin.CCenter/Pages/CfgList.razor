@@ -1,0 +1,281 @@
+﻿@using Microsoft.AspNetCore.Components
+@using System.Text
+@inject DialogService DialogService
+@inject ToastService ToastService
+@inject ManagerCCenter ManagerCCenter
+
+<p></p>
+<h6>配置列表</h6>
+<p></p>
+
+@foreach (var i in Items)
+{
+    <Row ItemsPerRow="ItemsPerRow.One">
+        <Card IsShadow="true">
+            <BodyTemplate>
+                <Row ItemsPerRow="ItemsPerRow.Twelve">
+                    <Row ColSpan="11">
+                        <h6>@i.NameSpace</h6>
+                    </Row>
+                    <Button Color="Color.Secondary" Text="添加" OnClick="@(() => OnButtonAddClick(i))" />
+                </Row>
+                <p></p>
+                @if (i.ListCfgItem.Count > 0)
+                {
+                    <Row ItemsPerRow="ItemsPerRow.One">
+                        <Table TItem="CfgItem" Items="@i.ListCfgItem"
+                               OnDeleteAsync="@OnDeleteAsync" OnSaveAsync="@OnSaveAsync"
+                               IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+                               TableSize="TableSize.Compact" AllowResizing="false" IsBordered="true"
+                               ShowExtendButtons="true" FixedExtendButtonsColumn="true"
+                               ShowLoading="true">
+                            <TableColumns>
+                                <TableColumn @bind-Field="@context.Key" Fixed="true" />
+                                <TableColumn @bind-Field="@context.Value" Fixed="true" />
+                            </TableColumns>
+                        </Table>
+                    </Row>
+                }
+            </BodyTemplate>
+        </Card>
+    </Row>
+    <p></p>
+}
+
+@* <Row ItemsPerRow="ItemsPerRow.Twelve">
+    <Row ColSpan="10">
+    </Row>
+    <BlazorInputFile.InputFile Text="导入所有配置" OnChange="OnButtonImport" />
+    <Button Color="Color.Secondary" Text="导出所有配置" OnClick="@OnButtonExport" />
+</Row>
+<p></p> *@
+
+<p></p>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    List<CfgInfo> Items { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sc = ManagerCCenter.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerManager>();
+
+        var t1 = container.GetAllCfg();
+        var t2 = container.GetAllNameSpace();
+        await Task.WhenAll(t1, t2);
+
+        var list_cfg = t1.Result;
+        var list_ns = t2.Result;
+
+        Items.Clear();
+        if (list_cfg != null)
+        {
+            List<CfgInfo> list_cfginfo = new();
+
+            foreach (var i in list_cfg)
+            {
+                string key = list_ns.Find(ns => ns._id == i._id)?.NameSpace;
+                if (!string.IsNullOrEmpty(key))
+                {
+                    CfgInfo cfg_info = new();
+                    cfg_info._id = i._id;
+                    cfg_info.NameSpace = key;
+                    foreach (var j in i.MapCfg)
+                    {
+                        CfgItem cfg_item = new()
+                            {
+                                _id = i._id,
+                                Key = j.Key,
+                                Value = j.Value,
+                            };
+                        cfg_info.ListCfgItem.Add(cfg_item);
+                    }
+                    list_cfginfo.Add(cfg_info);
+                }
+            }
+
+            Items.AddRange(list_cfginfo);
+        }
+
+        Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+        StateHasChanged();
+    }
+
+    async Task OnButtonAddClick(CfgInfo cfg_info)
+    {
+        CfgItem cfg_item = new()
+            {
+                _id = cfg_info._id,
+                Key = string.Empty,
+                Value = string.Empty,
+            };
+
+        await DialogService.ShowSaveDialog<CfgDlgAddItem>("添加配置项",
+        async () =>
+        {
+            var sc = ManagerCCenter.ServiceClient;
+            var container = sc.GetContainerRpc<IContainerManager>();
+            var data_cfg = await container.AddCfgItem(cfg_item._id, cfg_item.Key, cfg_item.Value);
+
+            if (data_cfg == null)
+            {
+                await ToastService.Show(new ToastOption()
+                    {
+                        Category = ToastCategory.Error,
+                        Title = "错误通知",
+                        Content = "添加配置项失败，已存在！"
+                    });
+
+                return false;
+            }
+
+            cfg_info.ListCfgItem.Add(cfg_item);
+
+            Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+            StateHasChanged();
+
+            await ToastService.Show(new ToastOption()
+                {
+                    Category = ToastCategory.Success,
+                    Title = "成功通知",
+                    Content = "添加配置项成功！"
+                });
+
+            return true;
+        },
+        (Dictionary<string, object> m) =>
+        {
+            m["Value"] = cfg_item;
+        },
+        (DialogOption op) =>
+        {
+            op.Size = Size.Medium;
+        });
+    }
+
+    async Task<bool> OnDeleteAsync(IEnumerable<CfgItem> items)
+    {
+        var sc = ManagerCCenter.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerManager>();
+
+        bool ok = true;
+        foreach (var i in items)
+        {
+            var data_cfg = await container.RemoveCfgItem(i._id, i.Key);
+            if (data_cfg == null)
+            {
+                ok = false;
+            }
+            else
+            {
+                foreach (var j in Items)
+                {
+                    if (j._id == i._id)
+                    {
+                        j.ListCfgItem.RemoveAll(cfg => cfg.Key == i.Key);
+                    }
+                }
+
+                Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+            }
+        }
+
+        StateHasChanged();
+
+        return ok;
+    }
+
+    async Task<bool> OnSaveAsync(CfgItem item, ItemChangedType change_type)
+    {
+        var sc = ManagerCCenter.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerManager>();
+
+        var data_cfg = await container.UpdateCfgItem(item._id, item.Key, item.Value);
+
+        bool ok = data_cfg != null;
+        if (ok)
+        {
+            foreach (var i in Items)
+            {
+                if (i._id == item._id)
+                {
+                    bool find = false;
+                    foreach (var j in i.ListCfgItem)
+                    {
+                        if (j.Key == item.Key)
+                        {
+                            j.Value = item.Value;
+                            find = true;
+                        }
+                    }
+
+                    if (!find)
+                    {
+                        i.ListCfgItem.Add(item);
+                    }
+                }
+            }
+
+            Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+            StateHasChanged();
+        }
+
+        return ok;
+    }
+
+    // async Task OnButtonImport(IFileListEntry[] list_file)
+    // {
+    //     ImportExportCfgs cfgs = null;
+
+    //     foreach (var f in list_file)
+    //     {
+    //         var f_index = f.Name.LastIndexOf('.');
+    //         string name = f.Name.Substring(0, f_index);
+    //         System.Console.WriteLine($"Name={name}");
+
+    //         using TextReader tr = new StreamReader(f.Data, Encoding.UTF8);
+    //         string data = await tr.ReadToEndAsync();
+
+    //         cfgs = Newtonsoft.Json.JsonConvert.DeserializeObject<ImportExportCfgs>(data);
+
+    //         break;
+    //     }
+
+    //     var sc = ManagerCCenter.ServiceClient;
+    //     var container = sc.GetContainerRpc<IContainerManager>();
+
+    //     await container.ImportAllCfg(cfgs);
+
+    //     Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+    //     await ToastService.Show(new ToastOption()
+    //         {
+    //             Category = ToastCategory.Information,
+    //             Title = "通知",
+    //             Content = "导入配置成功！"
+    //         });
+    // }
+
+    // async Task OnButtonExport()
+    // {
+    //     var sc = ManagerCCenter.ServiceClient;
+    //     var container = sc.GetContainerRpc<IContainerManager>();
+
+    //     var cfgs = await container.ExportAllCfg();
+
+    //     var data = Newtonsoft.Json.JsonConvert.SerializeObject(cfgs);
+
+    //     await ToastService.Show(new ToastOption()
+    //         {
+    //             Category = ToastCategory.Information,
+    //             Title = "消息通知",
+    //             Content = data
+    //         });
+    // }
+}

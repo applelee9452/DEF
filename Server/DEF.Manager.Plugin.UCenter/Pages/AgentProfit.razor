@@ -1,0 +1,108 @@
+﻿@* @using BootstrapBlazor.Components
+@using DEF.Manager.Components
+@using DEF.UCenter
+@using MongoDB.Driver
+@inject ManagerUCenter ManagerUCenter
+
+<Table TItem="DataOrderChargeAgentProfit" IsStriped="true" IsBordered="true" @ref="Table"
+	   TableSize="TableSize.Compact" IsPagination="true"
+	   ShowSearch="true" SearchMode="SearchMode.Top" CustomerSearchModel="SearchModel"
+	   ShowToolbar="true" ShowAddButton="false" ShowEditButton="false" ShowDeleteButton="false" ShowLoading="true"
+	   OnQueryAsync="OnQueryAsync">
+	<TableColumns>
+		<TableColumn @bind-Field="context.CreatedTime" Text="创建时间" Formatter="LocaleDateTimeFormatter"></TableColumn>
+		<TableColumn @bind-Field="context.AgentId" Text="代理 Id"></TableColumn>
+		<TableColumn @bind-Field="context.OrderChargeId" Text="订单号"></TableColumn>
+		<TableColumn @bind-Field="context.Amount" Text="结算金额"></TableColumn>
+		<TableColumn @bind-Field="context.Currency" Text="结算货币"></TableColumn>
+	</TableColumns>
+	<CustomerSearchTemplate>
+		@if (context is DataOrderChargeSearchModel model)
+		{
+			<DataOrderChargeSearch @bind-Model="@model" OnSearchCallback="OnSearchCallback" />
+		}
+	</CustomerSearchTemplate>
+</Table>
+
+@code
+{
+	[Inject]
+	ManagerSession ManagerSession { get; set; }
+
+	DataOrderChargeSearchModel SearchModel { get; set; } = new();
+
+	Table<DataOrderChargeAgentProfit> Table { get; set; }
+
+	async Task<QueryData<DataOrderChargeAgentProfit>> OnQueryAsync(QueryPageOptions options)
+	{
+		// 通过当前用户获取可查看的所有代理集合
+		var agents = GetAgents(ManagerSession.User.UserName);
+		var filter = ToFilter(options, agents);
+		var (items, count) = await ManagerUCenter.Db
+			.PageAsync(filter, StringDef.DbCollectionDataOrderChargeAgentProfit, options.PageIndex - 1, options.PageItems);
+
+		return new QueryData<DataOrderChargeAgentProfit>
+			{
+				Items = items,
+				TotalCount = (int)count,
+				IsAdvanceSearch = true,
+				IsFiltered = true,
+				IsSearch = true,
+				IsSorted = true,
+			};
+	}
+
+	public FilterDefinition<DataOrderChargeAgentProfit> ToFilter(QueryPageOptions options, HashSet<ulong> agents)
+	{
+		var fd = Builders<DataOrderChargeAgentProfit>.Filter.Empty;
+		if (options.CustomerSearches.Count > 0)
+		{
+			var filters = new List<FilterDefinition<DataOrderChargeAgentProfit>>();
+			foreach (var search in options.CustomerSearches)
+			{
+				if (search is SearchFilterAction a)
+				{
+					if (a.Name == nameof(DataOrderChargeSearchModel.AgentId))
+					{
+						filters.Add(Builders<DataOrderChargeAgentProfit>.Filter.Eq(i => i.AgentId, (ulong)a.Value));
+					}
+					if (a.Name == nameof(DataOrderChargeSearchModel.Start))
+					{
+						filters.Add(Builders<DataOrderChargeAgentProfit>.Filter.Gt(i => i.CreatedTime, (DateTime)a.Value));
+					}
+					if (a.Name == nameof(DataOrderChargeSearchModel.End))
+					{
+						filters.Add(Builders<DataOrderChargeAgentProfit>.Filter.Lt(i => i.CreatedTime, (DateTime)a.Value));
+					}
+				}
+			}
+			fd = Builders<DataOrderChargeAgentProfit>.Filter.And(filters);
+		}
+		else
+		{
+			fd = Builders<DataOrderChargeAgentProfit>.Filter.In(i => i.AgentId, agents);
+		}
+		return fd;
+	}
+
+	Task<string> LocaleDateTimeFormatter(object val)
+	{
+		var ret = "";
+		if (val is TableColumnContext<DataOrderChargeAgentProfit, object> v && v.Value is DateTime dt)
+		{
+			var offset = ManagerSession.TimezoneOffset;
+			ret = dt.AddHours(offset).ToString("yyyy-MM-dd HH:mm:ss");
+		}
+		return Task.FromResult(ret);
+	}
+
+	HashSet<ulong> GetAgents(string userName)
+	{
+		return [1001, 1002, 1003, 1004];
+	}
+
+	async Task OnSearchCallback()
+	{
+		await Table.QueryAsync();
+	}
+} *@

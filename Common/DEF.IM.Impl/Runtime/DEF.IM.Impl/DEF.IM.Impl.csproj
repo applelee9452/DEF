@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Configurations>Debug;Release</Configurations>
+		<DefineConstants>TRACE;ENABLE_FSM</DefineConstants>
+		<RootNamespace>DEF.IM</RootNamespace>
+		<Product>DEF</Product>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<NoWarn>CS0168;1701;1702;IDE1006;IDE0060;CA1822</NoWarn>
+		<OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+		<BaseOutputPath>..\..\..\..\_Tmp\DEF.IM.Impl\bin</BaseOutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="obj\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<None Remove="obj\**" />
+		<None Remove=".\**\*.meta" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\DEF.IM.Interface\Runtime\DEF.IM.Interface\DEF.IM.Interface.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,72 @@
+@page "/"
+
+<div class="chat-main">
+    <!--  对话框头部 -->
+    <div class="header grey12">
+        <span class="services-title">@clerk</span>
+        <span class="layui-badge-dot layui-bg-green hidden"></span>
+    </div>
+
+    <div class="container">
+        <div class="workarea">
+            <!--  对话内容部分 -->
+            <div class="content" id="wrap" @ref="windowRef">
+                <ul class="conversation">
+                    @foreach (var msg in _messageList)
+                    {
+                        <ChatBubble Message="msg" CurrentUser="@currentUser" />
+                    }
+                </ul>
+            </div>
+            <!--PC端输入框-->
+            <div class="pc_foot footer widths">
+                <div class="keyword swiper-container-horizontal">
+                    <div class="swiper-wrapper" id="question_key_list" style="transition-duration: 0ms;">
+                    </div>
+                    <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>
+                </div>
+                <img class="toggle toggle-right" src="/images/right.png" alt="">
+                <img class="toggle toggle-left" src="/images/left.png" alt="">
+
+                <div class="msg-input">
+                    <textarea class="edit-ipt" placeholder="发消息..." contenteditable="true" hidefocus="true" tabindex="0" @bind="_typingValue" @oninput="@OnInput" @onkeydown="KeyDown" @ref="inputRef"></textarea>
+                </div>
+
+                <div class="msg-toolbar-footer grey12">
+                    <button class="layui-btn msg-send-btn" @onclick="Send" @onclick:stopPropagation>
+                        发送
+                    </button>
+                </div>
+                <div class="msg-toolbar">
+                    <a id="images" href="javascript:">
+                        <div class="layui-box input-but  size">
+                            <img src="/images/photo.png" alt="">
+                            <input type="file" class="fileinput" @ref="pc_fileRef" />
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <!--移动端输入框-->
+            <div class="m_foot">
+                <div class="foot_msg">
+                    <div class="footer">
+                        <input type="text" id="text_in" placeholder="发消息..." class="layui-input" @bind="_typingValue">
+                        <button class="layui-btn layui-btn-normal send-btn" @onclick="Send" @onclick:stopPropagation>
+                            发送
+                        </button>
+                    </div>
+                    <div class="msg-toolbar">
+                        <a id="images" href="javascript:">
+                            <form id="picture" enctype="multipart/form-data">
+                                <div class="layui-box input-but  size">
+                                    <img src="/images/photo_m.png" alt="">
+                                    <input type="file" name="upload" class="fileinput" @ref="mobile_fileRef">
+                                </div>
+                            </form>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

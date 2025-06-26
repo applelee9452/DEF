@@ -1,0 +1,28 @@
+{
+    "name": "DEF.Core.Editor",
+    "rootNamespace": "",
+    "references": [
+        "YooAsset",
+        "Tilemap3D",
+        "Tilemap3DEx",
+        "Sirenix.OdinInspector.Modules.UnityMathematics",
+        "Sirenix.OdinInspector.CompatibilityLayer",
+        "Sirenix.OdinInspector.CompatibilityLayer.Editor",
+        "DEF.Unity.CsvHelper",
+        "DEF.Unity.Mongo",
+        "DEF.Unity.protobuf-net",
+        "DEF.Common.DotRecast",
+        "DEF.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

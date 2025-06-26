@@ -1,0 +1,53 @@
+﻿@using Microsoft.AspNetCore.Authentication.Cookies
+@using MongoDB.Bson
+@using MongoDB.Driver
+@inject NavigationManager NavigationManager
+@inject ManagerUCenter ManagerUCenter
+@inject ManagerDb ManagerDb
+
+<p></p>
+<h6>代理链接</h6>
+<p></p>
+
+<div class="col-12 col-sm-6">
+    <Display TValue="string" Value="@MyAgentLinkUrl" />
+</div>
+<div class="col-12 col-sm-6">
+    <QRCode Content="@MyAgentLinkUrl"></QRCode>
+</div>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    public string MyAgentLinkUrl { get; set; }// 我的代理链接
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationState;
+        if (!state.User.Identity!.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo(CookieAuthenticationDefaults.LoginPath, true);
+            return;
+        }
+
+        // 通过登录用户初始化上下文
+        var user_name = state.User.Identity!.Name!;
+        var user = await ManagerDb.GetUserByUserName(user_name, false);
+
+        if (user == null)
+        {
+            NavigationManager.NavigateTo(CookieAuthenticationDefaults.LoginPath, true);
+            return;
+        }
+
+        string agent_url_prefix = string.Empty;
+        var settings = await ManagerUCenter.Db.ReadAsync<ConfigSettings>(a => a.Id == "Settings", typeof(ConfigSettings).Name);
+        if (settings != null)
+        {
+            agent_url_prefix = settings.AgentUrlPrefix;
+        }
+
+        MyAgentLinkUrl = $"{agent_url_prefix}{user.AgentId}";
+    }
+}

@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<RootNamespace>DEF.Manager</RootNamespace>
+		<Product>DEF</Product>
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BootstrapBlazor" Version="9.7.4" />
+		<PackageReference Include="BootstrapBlazor.BarCode" Version="9.0.1" />
+		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\DEF.Service\DEF.Service.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="BootstrapBlazor.Components" />
+		<Using Include="Microsoft.Extensions.Logging" />
+		<Using Include="System" />
+		<Using Include="System.Collections.Generic" />
+		<Using Include="System.Threading.Tasks" />
+		<Using Include="System.Linq" />
+	</ItemGroup>
+
+</Project>

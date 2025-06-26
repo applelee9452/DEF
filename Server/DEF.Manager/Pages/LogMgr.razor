@@ -1,0 +1,211 @@
+﻿@page "/logmgr"
+@attribute [Authorize]
+@using MongoDB.Bson;
+@using MongoDB.Driver;
+@inject IHttpClientFactory HttpClientFactory
+@inject ManagerContext ManagerContext
+@inject ManagerSession ManagerSession
+
+<p></p>
+<h6>日志管理</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.Four">
+	<Row ColSpan="2">
+		<RadioList Items="@ListLogLevel" @bind-Value="@CurrentLogLevel" OnSelectedChanged="@OnRadioBtnLogLevelListItemChange"></RadioList>
+	</Row>
+	<Row ColSpan="1">
+		<div>
+			<Button Color="Color.Secondary" Text="清除" OnClick="@OnClickBtnClear" />
+			<Button Color="Color.Secondary" Text="刷新" OnClick="@OnClickBtnRefresh" />
+		</div>
+	</Row>
+	<Row ColSpan="4">
+		<RadioList Items="@ListServiceName" @bind-Value="@CurrentServiceName" OnSelectedChanged="@OnRadioBtnServiceNameListItemChange"></RadioList>
+	</Row>
+</Row>
+
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="LogItem" Items="@Items"
+		   IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+		   UseComponentWidth="false" AllowResizing="false" IsBordered="true"
+		   ShowLoading="true" ShowExportButton="true">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.Level" Width="100" Fixed="true" />
+			<TableColumn @bind-Field="@context.Timestamp" Width="150" Fixed="true" Text="时间">
+				<Template Context="v">
+					<div>@v.Row.Timestamp.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.RenderedMessage" TextWrap="true">
+				<Template Context="v">
+					@{
+						var level = v.Row.Level;
+						@if (level == "Warning")
+						{
+							<span><font color="#D94600">@v.Row.RenderedMessage</font></span>
+						}
+						else if (level == "Error")
+						{
+							<span><font color="red">@v.Row.RenderedMessage</font></span>
+						}
+						else
+						{
+							<span>@v.Row.RenderedMessage</span>
+						}
+					}
+				</Template>
+			</TableColumn>
+		</TableColumns>
+	</Table>
+	<Pagination PageItems="@PageSize" PageCount="@TotalCount" PageIndex="@PageIndex" OnPageLinkClick="@OnPageLinkClick" ShowPaginationInfo="true"></Pagination>
+</Row>
+
+@code
+{
+	public class LogItem
+	{
+		public string Level { get; set; }
+		public string RenderedMessage { get; set; }
+		public DateTime Timestamp { get; set; }
+		public string SourceContext { get; set; }
+		public string Exception { get; set; }
+	}
+
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	List<SelectedItem> ListServiceName { get; set; }
+	List<SelectedItem> ListLogLevel { get; set; }
+	SelectedItem CurrentServiceName { get; set; }
+	SelectedItem CurrentLogLevel { get; set; }
+	int PageIndex { get; set; } = 1;
+	int PageSize { get; set; } = 100;
+	int TotalCount { get; set; }
+	List<LogItem> Items { get; set; } = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		ListServiceName = new List<SelectedItem>();
+
+		var list_servicename = ManagerContext.ManagerOptions.Value.LogServices;
+		if (list_servicename != null && list_servicename.Count > 0)
+		{
+			for (int i = 0; i < list_servicename.Count; i++)
+			{
+				var item = new SelectedItem((i + 1).ToString(), list_servicename[i]);
+				ListServiceName.Add(item);
+			}
+		}
+
+		ListLogLevel = new List<SelectedItem>()
+		{
+			new SelectedItem("1", "All"),
+			new SelectedItem("2", "Information"),
+			new SelectedItem("3", "Warning"),
+			new SelectedItem("4", "Error"),
+		};
+
+		CurrentServiceName = ListServiceName.Count > 0 ? ListServiceName[0] : null;
+		CurrentLogLevel = ListLogLevel[0];
+
+		PageIndex = 1;
+
+		await QueryData();
+	}
+
+	async Task QueryData()
+	{
+		try
+		{
+			if (CurrentServiceName == null) return;
+
+			var collection = ManagerContext.DbLogs.Database.GetCollection<BsonDocument>(CurrentServiceName.Text);
+			FilterDefinition<BsonDocument> filter = null;
+			if (CurrentLogLevel.Text == "All")
+			{
+				filter = Builders<BsonDocument>.Filter.Empty;
+			}
+			else
+			{
+				filter = Builders<BsonDocument>.Filter.Eq("Level", CurrentLogLevel.Text);
+			}
+
+			var sorter = Builders<BsonDocument>.Sort.Descending("UtcTimestamp");// 降序，最新的在第一页
+
+			TotalCount = (int)await collection.Find(filter).CountDocumentsAsync();
+			int page_count = (int)Math.Ceiling(TotalCount / (float)PageSize);
+
+			if (PageIndex > page_count)
+			{
+				PageIndex = page_count;
+			}
+			if (PageIndex < 1)
+			{
+				PageIndex = 1;
+			}
+
+			var list_data = await collection.Find(filter).Sort(sorter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+			Items.Clear();
+			foreach (var i in list_data)
+			{
+				LogItem item = new LogItem()
+					{
+						Level = i["Level"].ToString(),
+						RenderedMessage = i["RenderedMessage"].ToString(),
+						Timestamp = DateTime.Parse(i["UtcTimestamp"].ToString()),
+					};
+				Items.Add(item);
+			}
+		}
+		catch (Exception e)
+		{
+			System.Console.WriteLine("LogMgr.QueryData() " + e.ToString());
+		}
+
+		StateHasChanged();
+	}
+
+	async Task OnClickBtnClear(MouseEventArgs args)
+	{
+		if (CurrentServiceName == null) return;
+
+		await ManagerContext.DbLogs.Database.DropCollectionAsync(CurrentServiceName.Text);
+
+		PageIndex = 1;
+
+		await QueryData();
+	}
+
+	async Task OnClickBtnRefresh(MouseEventArgs args)
+	{
+		PageIndex = 1;
+
+		await QueryData();
+	}
+
+	async Task OnRadioBtnServiceNameListItemChange(IEnumerable<SelectedItem> values, SelectedItem val)
+	{
+		CurrentServiceName = val;
+		PageIndex = 1;
+
+		await QueryData();
+	}
+
+	async Task OnRadioBtnLogLevelListItemChange(IEnumerable<SelectedItem> values, SelectedItem val)
+	{
+		CurrentLogLevel = val;
+		PageIndex = 1;
+
+		await QueryData();
+	}
+
+	async Task OnPageLinkClick(int page_index)
+	{
+		PageIndex = page_index;
+
+		await QueryData();
+	}
+}

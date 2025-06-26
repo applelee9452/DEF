@@ -1,0 +1,19 @@
+﻿<div class="row form-inline">
+    <div class="col-12">
+        <BootstrapInput @bind-Value="Value.Key" ShowLabel="true" DisplayText="Key" />
+    </div>
+</div>
+<p></p>
+
+<div class="row form-inline">
+    <div class="col-12">
+        <Textarea placeholder="请输入值..." rows="5" @bind-Value="Value.Value" DisplayText="Value" />
+    </div>
+</div>
+<p></p>
+
+@code
+{
+    [Parameter]
+    public CfgItem Value { get; set; }
+}

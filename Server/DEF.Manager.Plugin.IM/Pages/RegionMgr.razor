@@ -1,0 +1,442 @@
+﻿@using System.Text
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ManagerIM ManagerIM
+@inject ToastService ToastService
+@inject DialogService DialogService
+
+<p></p>
+<h6>分区管理</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.Twelve">
+	<Button IsBlock="true" Color="Color.Primary" Size="Size.Medium" Text="新建分区" OnClick="@OnClickButtonAdd" />
+	<Button IsBlock="true" Color="Color.Primary" Size="Size.Medium" Text="修改分区" OnClick="@OnClickButtonEdit" />
+	<Button IsBlock="true" Color="Color.Primary" Size="Size.Medium" Text="合并分区" OnClick="@OnClickButtonMerge" />
+	<Button IsBlock="true" Color="Color.Danger" Size="Size.Medium" Text="删除分区" OnClick="@OnClickButtonDelete" />
+</Row>
+<p></p>
+<Row ItemsPerRow="ItemsPerRow.Twelve">
+	<Tag Color="Color.Secondary">默认分区Id</Tag>
+	<BootstrapInput PlaceHolder="默认分区Id..." @bind-Value="@DefaultRegionId" />
+	<Button IsBlock="true" Color="Color.Secondary" Size="Size.Medium" Text="保存默认分区" OnClick="@OnClickButtonSaveDefaultRegionId" />
+</Row>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="Region" IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+		   TableSize="TableSize.Compact" IsBordered="true" ShowLoading="true"
+		   IsAutoRefresh="true" AutoRefreshInterval="1000"
+		   IsPagination="true" PageItemsSource="@PageItemsSource" OnQueryAsync="@OnQueryAsync">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.RegionGuid" Text="Guid" />
+			<TableColumn @bind-Field="@context.RegionId" Text="Id" />
+			<TableColumn @bind-Field="@context.RegionName" Text="分区名" />
+			<TableColumn @bind-Field="@context.Dt" Text="创建时间">
+				<Template Context="v">
+					<div>@v.Row.Dt.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.PlayerNum" Text="分区人数" />
+			<TableColumn @bind-Field="@context.IsActive" Text="是否激活" />
+			<TableColumn @bind-Field="@context.Merge2RegionId" Text="已合并到的分区Id" />
+		</TableColumns>
+	</Table>
+</Row>
+<p></p>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	List<Region> ListRegion { get; set; } = [];
+	IEnumerable<int> PageItemsSource => new int[] { 50, 100 };
+	int DefaultRegionId { get; set; } = 0;
+
+	protected override async Task OnInitializedAsync()
+	{
+		var sc = ManagerIM.ServiceClient;
+		var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+		var list = await container.GetRegionList();
+
+		ListRegion.Clear();
+		if (list != null)
+		{
+			ListRegion.AddRange(list);
+		}
+
+		DefaultRegionId = await container.GetDefaultRegionId();
+
+		StateHasChanged();
+	}
+
+	// 点击按钮，添加分区
+	async Task OnClickButtonAdd(MouseEventArgs args)
+	{
+		Region region_item = new()
+		{
+		};
+
+		await DialogService.ShowSaveDialog<RegionDlgAdd>("新建分区",
+		async () =>
+		{
+			var sc = ManagerIM.ServiceClient;
+			var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+			await container.CreateRegion(region_item.RegionName);
+
+			var list = await container.GetRegionList();
+
+			ListRegion.Clear();
+			if (list != null)
+			{
+				ListRegion.AddRange(list);
+			}
+
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "新建分区成功！"
+				});
+
+			StateHasChanged();
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["Value"] = region_item;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Large;
+			op.SaveButtonText = "新建";
+		});
+	}
+
+	// 点击按钮，编辑分区
+	async Task OnClickButtonEdit(MouseEventArgs args)
+	{
+		Region region_item = new()
+		{
+		};
+
+		await DialogService.ShowSaveDialog<RegionDlgEdit>("修改分区",
+		async () =>
+		{
+			var sc = ManagerIM.ServiceClient;
+			var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+			bool exist_region = false;
+			foreach (var i in ListRegion)
+			{
+				if (i.RegionId == region_item.RegionId)
+				{
+					exist_region = true;
+				}
+			}
+
+			if (!exist_region)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "分区Id不存在！"
+					});
+
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(region_item.RegionName))
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "分区名不可以为空！"
+					});
+
+				return false;
+			}
+
+			await container.ChangeRegionName(region_item.RegionId, region_item.RegionName);
+
+			var list = await container.GetRegionList();
+
+			ListRegion.Clear();
+			if (list != null)
+			{
+				ListRegion.AddRange(list);
+			}
+
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "修改分区成功！"
+				});
+
+			StateHasChanged();
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["Value"] = region_item;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Large;
+			op.SaveButtonText = "修改";
+		});
+	}
+
+	// 点击按钮，合并分区
+	async Task OnClickButtonMerge(MouseEventArgs args)
+	{
+		Region region_src = new()
+		{
+		};
+
+		Region region_target = new()
+		{
+		};
+
+		await DialogService.ShowSaveDialog<RegionDlgMerge>("合并分区",
+		async () =>
+		{
+			var sc = ManagerIM.ServiceClient;
+			var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+			Region src = null;
+			Region target = null;
+
+			foreach (var i in ListRegion)
+			{
+				if (i.RegionId == region_src.RegionId)
+				{
+					src = i;
+				}
+
+				if (i.RegionId == region_target.RegionId)
+				{
+					target = i;
+				}
+			}
+
+			if (src == null)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "源分区Id不存在！"
+					});
+
+				return false;
+			}
+
+			if (target == null)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "目标分区Id不存在！"
+					});
+
+				return false;
+			}
+
+			if (!src.IsActive)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "源分区是未激活状态，不可以参与合并！"
+					});
+
+				return false;
+			}
+
+			if (src.Merge2RegionId > 0)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = $"源分区已经合并入{src.Merge2RegionId}分区，不可以参与合并！"
+					});
+
+				return false;
+			}
+
+			if (!target.IsActive)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "目标分区是未激活状态，不可以参与合并！"
+					});
+
+				return false;
+			}
+
+			if (target.Merge2RegionId > 0)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = $"目标分区已经合并入{target.Merge2RegionId}分区，不可以参与合并！"
+					});
+
+				return false;
+			}
+
+			await container.MergeRegion(src.RegionId, target.RegionId);
+
+			var list = await container.GetRegionList();
+
+			ListRegion.Clear();
+			if (list != null)
+			{
+				ListRegion.AddRange(list);
+			}
+
+			StateHasChanged();
+
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "合并分区成功！"
+				});
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["ValueSrc"] = region_src;
+			m["ValueTarget"] = region_target;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Large;
+			op.SaveButtonText = "合并";
+		});
+	}
+
+	// 点击按钮，删除分区
+	async Task OnClickButtonDelete(MouseEventArgs args)
+	{
+		Region region_item = new()
+		{
+		};
+
+		await DialogService.ShowSaveDialog<RegionDlgDelete>("删除分区",
+		async () =>
+		{
+			var sc = ManagerIM.ServiceClient;
+			var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+			foreach (var i in ListRegion)
+			{
+				if (i.RegionId == region_item.RegionId)
+				{
+					region_item.RegionGuid = i.RegionGuid;
+					break;
+				}
+			}
+
+			if (string.IsNullOrEmpty(region_item.RegionGuid))
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "不存在该分区！"
+					});
+
+				StateHasChanged();
+
+				return true;
+			}
+
+			await container.DeleteRegion(region_item.RegionGuid);
+
+			var list = await container.GetRegionList();
+
+			ListRegion.Clear();
+			if (list != null)
+			{
+				ListRegion.AddRange(list);
+			}
+
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "删除分区成功！"
+				});
+
+			StateHasChanged();
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["Value"] = region_item;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Large;
+			op.SaveButtonText = "删除";
+		});
+	}
+
+	// 点击按钮，保存默认分区
+	async Task OnClickButtonSaveDefaultRegionId(MouseEventArgs args)
+	{
+		var sc = ManagerIM.ServiceClient;
+		var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+		bool r = await container.SetDefaultRegionId(DefaultRegionId);
+
+		if (r)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "保存默认分区成功！"
+				});
+		}
+		else
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Warning,
+					Title = "失败通知",
+					Content = "保存默认分区失败，指定的分区Id不存在！"
+				});
+
+			DefaultRegionId = await container.GetDefaultRegionId();
+
+			StateHasChanged();
+		}
+	}
+
+	// 表格内置查询回调
+	Task<QueryData<Region>> OnQueryAsync(QueryPageOptions options)
+	{
+		IEnumerable<Region> items = ListRegion;
+		var total = items.Count();
+		items = items.Skip((options.PageIndex - 1) * options.PageItems).Take(options.PageItems).ToList();
+		return Task.FromResult(new QueryData<Region>() { Items = items, TotalCount = total, IsSorted = true, IsFiltered = true, IsSearch = true });
+	}
+}

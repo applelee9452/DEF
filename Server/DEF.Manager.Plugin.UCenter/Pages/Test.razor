@@ -1,0 +1,76 @@
+﻿@using Microsoft.AspNetCore.Authentication.Cookies
+@using MongoDB.Bson
+@using MongoDB.Driver
+@inject NavigationManager NavigationManager
+@inject ManagerUCenter ManagerUCenter
+@inject ManagerDb ManagerDb
+@inject ToastService ToastService
+
+<p></p>
+<h6>测试</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<Card>
+		<BodyTemplate>
+			<BootstrapInputNumber @bind-Value="@AccountCount4CreateUser" />
+			<p />
+			<Button OnClick="@OnClickButtonCreateUsers" Color="Color.Primary">创建测试用户</Button>
+		</BodyTemplate>
+	</Card>
+</Row>
+<p />
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<Card>
+		<BodyTemplate>
+			<BootstrapInputNumber @bind-Value="@PayChargeCount" />
+			<BootstrapInputNumber @bind-Value="@AccountCount4CreatePayCharge" />
+			<p />
+			<Button OnClick="@OnClickButtonCreateOrderCharges" Color="Color.Primary">创建测试订单</Button>
+		</BodyTemplate>
+	</Card>
+</Row>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	int AccountCount4CreateUser { get; set; }
+	int PayChargeCount { get; set; }
+	int AccountCount4CreatePayCharge { get; set; }
+
+	protected override Task OnInitializedAsync()
+	{
+		return Task.CompletedTask;
+	}
+
+	async Task OnClickButtonCreateUsers(MouseEventArgs e)
+	{
+		if (AccountCount4CreateUser <= 0) return;
+
+		var rpc = ManagerUCenter.ServiceClient.GetContainerRpc<IContainerStatelessUCenterTest>();
+		await rpc.TestCreateUsers(AccountCount4CreateUser);
+
+		await ToastService.Show(new ToastOption()
+			{
+				Category = ToastCategory.Success,
+				Title = "成功通知",
+				Content = "创建测试用户成功！"
+			});
+	}
+
+	async Task OnClickButtonCreateOrderCharges(MouseEventArgs e)
+	{
+		if (PayChargeCount <= 0 || AccountCount4CreatePayCharge <= 0) return;
+
+		var rpc = ManagerUCenter.ServiceClient.GetContainerRpc<IContainerStatelessUCenterTest>();
+		await rpc.TestCreatePayCharges(PayChargeCount, AccountCount4CreatePayCharge, DateTime.UtcNow, DateTime.UtcNow.AddDays(1));
+
+		await ToastService.Show(new ToastOption()
+			{
+				Category = ToastCategory.Success,
+				Title = "成功通知",
+				Content = "创建测试订单成功！"
+			});
+	}
+}

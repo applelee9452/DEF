@@ -1,0 +1,60 @@
+﻿@using BootstrapBlazor.Components
+@using Microsoft.AspNetCore.Components
+@using System.Threading
+@implements IDisposable
+
+<p></p>
+<h6>社交首页</h6>
+<p></p>
+
+<Message @ref="MessageElement" />
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<Card>
+		<BodyTemplate>
+			@*<h5>概览</h5> *@
+			<p class="card-text">在线玩家数：@OnlinePlayerCount</p>
+			<p class="card-text">在线机器人：@OnlineBotCount</p>
+			<p></p>
+		</BodyTemplate>
+	</Card>
+	@*<Card>
+    <BodyTemplate>
+    <h5>Card title</h5>
+    <Spinner Color="Color.Secondary" Size="Size.Small"></Spinner>
+    <p role="status">Current count: @OnlinePlayerCount</p>
+    <p class="card-text">在线人数：@OnlinePlayerCount</p>
+    <a class="btn btn-primary">Go somewhere</a>
+    </BodyTemplate>
+    </Card> *@
+</Row>
+
+<p></p>
+
+@code
+{
+	System.Threading.Timer Timer { get; set; }
+	Message MessageElement { get; set; }
+	uint OnlinePlayerCount { get; set; } = 0;
+	uint OnlineBotCount { get; set; } = 0;
+
+	protected override Task OnInitializedAsync()
+	{
+		Timer = new System.Threading.Timer(new TimerCallback(async _ =>
+		{
+			await InvokeAsync(() => { StateHasChanged(); });
+
+		}), null, 1000, 1000);
+
+		return Task.CompletedTask;
+	}
+
+	void IDisposable.Dispose()
+	{
+		if (Timer != null)
+		{
+			Timer.Dispose();
+			Timer = null;
+		}
+	}
+}

@@ -1,0 +1,21 @@
+﻿@using BootstrapBlazor.Components
+
+<div class="row form-inline g-2">
+    <div class="col-12 col-sm-6">
+        <DateTimePicker @bind-Value="Model.Start" DisplayText="开始时间" ShowLabel="true"></DateTimePicker>
+    </div>
+    <div class="col-12 col-sm-6">
+        <DateTimePicker @bind-Value="Model.End" DisplayText="结束时间" ShowLabel="true"></DateTimePicker>
+    </div>
+    <div class="col-12 col-sm-6">
+        <Select Items="Items" @bind-Value="Model.AgentId" DisplayText="代理账号" ShowLabel="true"></Select>
+    </div>
+    <div class="col-12 col-sm-6">
+        <label class="form-label">快捷查询</label>
+        <div>
+            <Button Text="前天" OnClick="() => TriggerSearch(-2)" class="me-2"></Button>
+            <Button Text="昨天" OnClick="() => TriggerSearch(-1)" class="me-2"></Button>
+            <Button Text="今天" OnClick="() => TriggerSearch(0)"></Button>
+        </div>
+    </div>
+</div>

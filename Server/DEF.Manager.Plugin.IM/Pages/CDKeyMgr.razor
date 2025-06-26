@@ -1,0 +1,409 @@
+﻿@using System.Text
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ManagerIM ManagerIM
+@inject ToastService ToastService
+@inject DialogService DialogService
+
+<p></p>
+<h6>CDKey管理</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Card>
+		<BodyTemplate>
+			<Row ItemsPerRow="ItemsPerRow.Twelve">
+				<Button IsBlock="true" Color="Color.Primary" Size="Size.Medium" Text="新建CDKey" OnClick="@OnClickButtonAdd" />
+			</Row>
+			<Row ItemsPerRow="ItemsPerRow.One">
+				<Table TItem="CDKey" IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+					   TableSize="TableSize.Compact" IsBordered="true" ShowLoading="true"
+					   IsAutoRefresh="true" AutoRefreshInterval="1000"
+					   ShowToolbar="false" ShowAddButton="false" ShowEditButton="true" ShowDeleteButton="true" OnSaveAsync="@OnSaveAsync"
+					   ShowExtendButtons="true" ShowExtendDeleteButton="true" OnDeleteAsync="@OnDeleteAsync"
+					   IsPagination="true" PageItemsSource="@PageItemsSource" OnQueryAsync="@OnQueryAsync">
+					<TableColumns>
+						<TableColumn @bind-Field="@context.CDKeyGuid" Text="Guid" />
+						<TableColumn @bind-Field="@context.Key" Text="CDKey" />
+						<TableColumn @bind-Field="@context.CreateDt" Text="创建时间">
+							<Template Context="v">
+								<div>@v.Row.CreateDt.ToLocalTime()</div>
+							</Template>
+						</TableColumn>
+						<TableColumn @bind-Field="@context.ExpireDt" Text="过期时间">
+							<Template Context="v">
+								<div>@v.Row.ExpireDt.ToLocalTime()</div>
+							</Template>
+						</TableColumn>
+						<TableColumn @bind-Field="@context.TargetType" Text="发放目标类型" />
+						<TableColumn @bind-Field="@context.MailTitle" Text="邮件标题" />
+						<TableColumn @bind-Field="@context.MailDesc" Text="邮件内容" />
+						<TableColumn @bind-Field="@context.RegionIdList" Text="目标分区列表" />
+						<TableColumn @bind-Field="@context.PlayerIdList" Text="目标列表" />
+						<TableColumn @bind-Field="@context.CDKeyAttachmentList" Text="附件列表">
+							<Template Context="v">
+								@{
+									StringBuilder sb = new();
+									int index = -1;
+									foreach (var k in v.Row.CDKeyAttachmentList)
+									{
+										index++;
+										if (index > 0)
+										{
+											sb.Append("，");
+										}
+										sb.Append($"物品Id={k.ItemId} 数量={k.ItemCount}");
+									}
+									<div>@sb.ToString()</div>
+								}
+							</Template>
+						</TableColumn>
+					</TableColumns>
+				</Table>
+			</Row>
+			<p></p>
+		</BodyTemplate>
+	</Card>
+</Row>
+
+<p></p>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	List<CDKey> CDKeyList { get; set; } = [];
+	IEnumerable<int> PageItemsSource => new int[] { 50, 100 };
+
+	protected override async Task OnInitializedAsync()
+	{
+		var sc = ManagerIM.ServiceClient;
+		var container = sc.GetContainerRpc<IContainerStatefulIMCDKeyMgr>();
+
+		var list = await container.GetCDKeyList();
+
+		CDKeyList.Clear();
+		if (list != null)
+		{
+			CDKeyList.AddRange(list);
+		}
+
+		StateHasChanged();
+	}
+
+	// 点击按钮，删除CDKey
+	async Task<bool> OnDeleteAsync(IEnumerable<CDKey> items)
+	{
+		var sc = ManagerIM.ServiceClient;
+		var container = sc.GetContainerRpc<IContainerStatefulIMCDKeyMgr>();
+
+		var list = items.ToList();
+		for (int i = 0; i < list.Count; i++)
+		{
+			var one = list[i];
+
+			bool t = await container.DeleteCDKeyOne(one.CDKeyGuid);
+			if (t)
+			{
+				CDKeyList.RemoveAll(cdkey => cdkey.CDKeyGuid == one.CDKeyGuid);
+			}
+		}
+
+		StateHasChanged();
+
+		return true;
+	}
+
+	// 点击按钮，保存CDKey
+	async Task<bool> OnSaveAsync(CDKey item, ItemChangedType change_type)
+	{
+		var sc = ManagerIM.ServiceClient;
+		var container = sc.GetContainerRpc<IContainerStatefulIMCDKeyMgr>();
+		bool t = await container.UpdateCDKeyOne(item);
+		if (!t)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < CDKeyList.Count; i++)
+		{
+			var cdkey = CDKeyList[i];
+			if (cdkey.CDKeyGuid == item.CDKeyGuid)
+			{
+				CDKeyList[i] = item;
+
+				StateHasChanged();
+
+				return true;
+			}
+		}
+
+		return true;
+	}
+
+	// 点击按钮，添加CDKey
+	async Task OnClickButtonAdd(MouseEventArgs args)
+	{
+		CDKey cdkey = new() { };
+
+		await DialogService.ShowSaveDialog<CDKeyDlgAdd>("新建CDKey",
+		async () =>
+		{
+			if (string.IsNullOrEmpty(cdkey.Key))
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "CDKey不能为空",
+						Content = "CDKey不能为空"
+					});
+
+				return false;
+			}
+
+			cdkey.Key = cdkey.Key.ToLower();
+
+			if (cdkey.CDKeyAttachmentList?.Count <= 0)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "附件物品不能空",
+						Content = "附件物品不能空"
+					});
+
+				return false;
+			}
+
+			if (cdkey.TargetType == IMTargetType.Region && cdkey.RegionIdList?.Count <= 0)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "分区发放 至少需要选一个分区",
+						Content = "分区发放 至少需要选一个分区"
+					});
+
+				return false;
+			}
+
+			if (cdkey.TargetType == IMTargetType.Player && cdkey.PlayerIdList?.Count <= 0)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "对玩家发放 需要至少填一个Player",
+						Content = "对玩家发放 需要至少填一个Player"
+					});
+
+				return false;
+			}
+
+			cdkey.CDKeyGuid = Guid.NewGuid().ToString();
+			cdkey.CreateDt = DateTime.UtcNow;
+			cdkey.ExpireDt = DateTime.UtcNow.AddMonths(1);
+
+			var container = ManagerIM.ServiceClient.GetContainerRpc<IContainerStatefulIMCDKeyMgr>();
+			var new_cdkey = await container.CreateCDKey(cdkey);
+
+			if (new_cdkey == null)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "保存失败",
+						Content = "可能 CDKey 重复了"
+					});
+
+				return false;
+			}
+
+			var list = await container.GetCDKeyList();
+
+			CDKeyList.Clear();
+			if (list != null)
+			{
+				CDKeyList.AddRange(list);
+			}
+
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "新建CDKey成功！"
+				});
+
+			StateHasChanged();
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["Value"] = cdkey;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Large;
+			op.SaveButtonText = "新建";
+		});
+	}
+
+	// 点击按钮，编辑CDKey
+	// async Task OnClickButtonEdit(MouseEventArgs args)
+	// {
+	// 	CDKey cdkey = new()
+	// 	{
+	// 	};
+
+	// 	await DialogService.ShowSaveDialog<RegionDlgEdit>("修改CDKey",
+	// 	async () =>
+	// 	{
+	// 		// var sc = ManagerIM.ServiceClient;
+	// 		// var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+	// 		// bool exist_region = false;
+	// 		// foreach (var i in ListRegion)
+	// 		// {
+	// 		//     if (i.RegionId == region_item.RegionId)
+	// 		//     {
+	// 		//         exist_region = true;
+	// 		//     }
+	// 		// }
+
+	// 		// if (!exist_region)
+	// 		// {
+	// 		//     await ToastService.Show(new ToastOption()
+	// 		//         {
+	// 		//             Category = ToastCategory.Error,
+	// 		//             Title = "失败通知",
+	// 		//             Content = "CDKeyId不存在！"
+	// 		//         });
+
+	// 		//     return false;
+	// 		// }
+
+	// 		// if (string.IsNullOrEmpty(region_item.RegionName))
+	// 		// {
+	// 		//     await ToastService.Show(new ToastOption()
+	// 		//         {
+	// 		//             Category = ToastCategory.Error,
+	// 		//             Title = "失败通知",
+	// 		//             Content = "CDKey名不可以为空！"
+	// 		//         });
+
+	// 		//     return false;
+	// 		// }
+
+	// 		// await container.ChangeRegionName(region_item.RegionId, region_item.RegionName);
+
+	// 		// var list = await container.GetRegionList();
+
+	// 		// ListRegion.Clear();
+	// 		// if (list != null)
+	// 		// {
+	// 		//     ListRegion.AddRange(list);
+	// 		// }
+
+	// 		// await ToastService.Show(new ToastOption()
+	// 		//     {
+	// 		//         Category = ToastCategory.Success,
+	// 		//         Title = "成功通知",
+	// 		//         Content = "修改CDKey成功！"
+	// 		//     });
+
+	// 		// StateHasChanged();
+
+	// 		await Task.Delay(1);
+
+	// 		return true;
+	// 	},
+	// 	(Dictionary<string, object> m) =>
+	// 	{
+	// 		m["Value"] = cdkey;
+	// 	},
+	// 	(DialogOption op) =>
+	// 	{
+	// 		op.Size = Size.Large;
+	// 		op.SaveButtonText = "修改";
+	// 	});
+	// }
+
+	// 点击按钮，删除CDKey
+	// async Task OnClickButtonDelete(MouseEventArgs args)
+	// {
+	// 	CDKey cdkey = new()
+	// 	{
+	// 	};
+
+	// 	await DialogService.ShowSaveDialog<RegionDlgDelete>("删除CDKey",
+	// 	async () =>
+	// 	{
+	// 		// var sc = ManagerIM.ServiceClient;
+	// 		// var container = sc.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+
+	// 		// foreach (var i in ListRegion)
+	// 		// {
+	// 		//     if (i.RegionId == region_item.RegionId)
+	// 		//     {
+	// 		//         region_item.RegionGuid = i.RegionGuid;
+	// 		//         break;
+	// 		//     }
+	// 		// }
+
+	// 		// if (string.IsNullOrEmpty(region_item.RegionGuid))
+	// 		// {
+	// 		//     await ToastService.Show(new ToastOption()
+	// 		//         {
+	// 		//             Category = ToastCategory.Error,
+	// 		//             Title = "失败通知",
+	// 		//             Content = "不存在该CDKey！"
+	// 		//         });
+
+	// 		//     StateHasChanged();
+
+	// 		//     return true;
+	// 		// }
+
+	// 		// await container.DeleteRegion(region_item.RegionGuid);
+
+	// 		// var list = await container.GetRegionList();
+
+	// 		// ListRegion.Clear();
+	// 		// if (list != null)
+	// 		// {
+	// 		//     ListRegion.AddRange(list);
+	// 		// }
+
+	// 		// await ToastService.Show(new ToastOption()
+	// 		//     {
+	// 		//         Category = ToastCategory.Success,
+	// 		//         Title = "成功通知",
+	// 		//         Content = "删除CDKey成功！"
+	// 		//     });
+
+	// 		// StateHasChanged();
+
+	// 		await Task.Delay(1);
+
+	// 		return true;
+	// 	},
+	// 	(Dictionary<string, object> m) =>
+	// 	{
+	// 		m["Value"] = cdkey;
+	// 	},
+	// 	(DialogOption op) =>
+	// 	{
+	// 		op.Size = Size.Large;
+	// 		op.SaveButtonText = "删除";
+	// 	});
+	// }
+
+	// 表格内置查询回调
+	Task<QueryData<CDKey>> OnQueryAsync(QueryPageOptions options)
+	{
+		IEnumerable<CDKey> items = CDKeyList;
+		var total = items.Count();
+		items = items.Skip((options.PageIndex - 1) * options.PageItems).Take(options.PageItems).ToList();
+
+		return Task.FromResult(new QueryData<CDKey>() { Items = items, TotalCount = total, IsSorted = true, IsFiltered = true, IsSearch = true });
+	}
+}

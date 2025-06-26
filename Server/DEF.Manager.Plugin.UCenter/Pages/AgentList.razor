@@ -1,0 +1,237 @@
+﻿@using MongoDB.Bson
+@using MongoDB.Driver
+@using System.Text
+@inject ManagerUCenter ManagerUCenter
+@inject ManagerDb ManagerDb
+
+<p></p>
+<h6>代理列表</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="DataAgentView" Items="@ListAgentView"
+		   OnSaveAsync="@OnSaveAsync"
+		   TableSize="TableSize.Compact"
+		   ShowEditButton="true"
+		   IsStriped="true"
+		   IsMultipleSelect="false"
+		   ClickToSelect="true"
+		   IsBordered="true"
+		   ShowLoading="true">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.AgentId" Text="代理Id" />
+			<TableColumn @bind-Field="@context.UserName" Text="名称" />
+			<TableColumn @bind-Field="@context.StrAgentParent" Text="所有上级代理" />
+			<TableColumn @bind-Field="@context.CreatedTime" Text="创建时间">
+				<Template Context="v">
+					<div>@v.Row.CreatedTime.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.UpdatedTime" Text="更新时间">
+				<Template Context="v">
+					<div>@v.Row.UpdatedTime.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.IsDelete" Text="是否已删除" />
+		</TableColumns>
+	</Table>
+	<Pagination ShowPaginationInfo="true" PageItems="@PageSize" PageCount="@PageTotalCount" PageIndex="@PageIndex" OnPageLinkClick="@OnPageLinkClick"></Pagination>
+</Row>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	[Parameter]
+	public string SelectedAgentGuid { get; set; }
+	List<DataAgentView> ListAgentView { get; set; } = [];
+	int PageIndex { get; set; } = 1;
+	int PageSize { get; set; } = 50;
+	int PageTotalCount { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await QueryData();
+	}
+
+	async Task QueryData()
+	{
+		var collection = ManagerUCenter.Db.Database.GetCollection<DataAgent>(StringDef.DbCollectionDataAgent);
+
+		var state = await AuthenticationState;
+		if (!state.User.Identity!.IsAuthenticated)
+		{
+			return;
+		}
+
+		// 通过登录用户初始化上下文
+		var user_name = state.User.Identity!.Name!;
+		var user = await ManagerDb.GetUserByUserName(user_name, false);
+
+		if (user == null)
+		{
+			return;
+		}
+
+		// 当前登录用户的代理Id
+		ulong agent_id = user.AgentId;
+
+		switch (user.Role)
+		{
+			case RoleType.Guest:
+				{
+					ListAgentView.Clear();
+				}
+				break;
+			case RoleType.Agent:
+				{
+					FilterDefinition<DataAgent> filter = Builders<DataAgent>.Filter.ElemMatch(i => i.AgentParents, item => item == agent_id);
+
+					int total_count = (int)await collection.Find(filter).CountDocumentsAsync();
+					PageTotalCount = (int)Math.Ceiling(total_count / (float)PageSize);
+
+					if (PageIndex > PageTotalCount)
+					{
+						PageIndex = PageTotalCount;
+					}
+
+					if (PageIndex < 1)
+					{
+						PageIndex = 1;
+					}
+
+					var list_agent = await collection.Find(filter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+					ListAgentView.Clear();
+					if (list_agent != null && list_agent.Count > 0)
+					{
+						var collection_agent = ManagerUCenter.Db.Database.GetCollection<DataAgent>(StringDef.DbCollectionDataAgent);
+
+						foreach (var i in list_agent)
+						{
+							DataAgentView view = new()
+								{
+									Id = i.Id,
+									CreatedTime = i.CreatedTime,
+									UpdatedTime = i.UpdatedTime,
+									UserName = i.UserName,
+									AccountStatus = i.AccountStatus,
+									AgentId = i.AgentId,
+									AgentParents = i.AgentParents,
+									IsDelete = i.IsDelete,
+								};
+							if (view.AgentParents != null && view.AgentParents.Length > 0)
+							{
+								StringBuilder sb = new(256);
+								foreach (var j in view.AgentParents)
+								{
+									FilterDefinition<DataAgent> filter_agent = Builders<DataAgent>.Filter.Eq(i => i.AgentId, j);
+									var agent = await collection_agent.Find(filter_agent).FirstOrDefaultAsync();
+									if (agent != null)
+									{
+										sb.Append(agent.UserName);
+										sb.Append("，");
+									}
+								}
+								view.StrAgentParent = sb.ToString();
+							}
+							ListAgentView.Add(view);
+						}
+					}
+				}
+				break;
+			case RoleType.Platform:
+			case RoleType.Admin:
+				{
+					FilterDefinition<DataAgent> filter = null;
+					if (string.IsNullOrEmpty(SelectedAgentGuid))
+					{
+						filter = Builders<DataAgent>.Filter.Empty;
+					}
+					else
+					{
+						filter = Builders<DataAgent>.Filter.Eq("_id", SelectedAgentGuid);
+					}
+
+					int total_count = (int)await collection.Find(filter).CountDocumentsAsync();
+					PageTotalCount = (int)Math.Ceiling(total_count / (float)PageSize);
+
+					if (PageIndex > PageTotalCount)
+					{
+						PageIndex = PageTotalCount;
+					}
+
+					if (PageIndex < 1)
+					{
+						PageIndex = 1;
+					}
+
+					var list_agent = await collection.Find(filter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+					ListAgentView.Clear();
+					if (list_agent != null && list_agent.Count > 0)
+					{
+						var collection_agent = ManagerUCenter.Db.Database.GetCollection<DataAgent>(StringDef.DbCollectionDataAgent);
+
+						foreach (var i in list_agent)
+						{
+							DataAgentView view = new()
+								{
+									Id = i.Id,
+									CreatedTime = i.CreatedTime,
+									UpdatedTime = i.UpdatedTime,
+									UserName = i.UserName,
+									AccountStatus = i.AccountStatus,
+									AgentId = i.AgentId,
+									AgentParents = i.AgentParents,
+									IsDelete = i.IsDelete,
+								};
+							if (view.AgentParents != null && view.AgentParents.Length > 0)
+							{
+								StringBuilder sb = new(256);
+								foreach (var j in view.AgentParents)
+								{
+									FilterDefinition<DataAgent> filter_agent = Builders<DataAgent>.Filter.Eq(i => i.AgentId, j);
+									var agent = await collection_agent.Find(filter_agent).FirstOrDefaultAsync();
+									if (agent != null)
+									{
+										sb.Append(agent.UserName);
+										sb.Append("，");
+									}
+								}
+								view.StrAgentParent = sb.ToString();
+							}
+							ListAgentView.Add(view);
+						}
+					}
+				}
+				break;
+		}
+
+		StateHasChanged();
+	}
+
+	async Task OnPageLinkClick(int page_index)
+	{
+		PageIndex = page_index;
+
+		await QueryData();
+	}
+
+	async Task<bool> OnSaveAsync(DataAgentView item, ItemChangedType change_type)
+	{
+		var collection = ManagerUCenter.Db.Database.GetCollection<DataAgent>(StringDef.DbCollectionDataAgent);
+
+		FilterDefinition<DataAgent> filter = null;
+		filter = Builders<DataAgent>.Filter.Eq("_id", item.Id);
+
+		var update = Builders<DataAgent>.Update
+			.Set(x => x.AccountStatus, item.AccountStatus);
+
+		UpdateOptions update_options = new() { IsUpsert = true };
+
+		var update_result = await collection.UpdateOneAsync(filter, update, update_options);
+
+		return true;
+	}
+}

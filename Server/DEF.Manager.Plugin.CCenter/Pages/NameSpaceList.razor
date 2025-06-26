@@ -1,0 +1,167 @@
+﻿@inject MessageService MessageService
+@inject DialogService DialogService
+@inject ToastService ToastService
+@inject ManagerCCenter ManagerCCenter
+
+<p></p>
+<h6>名字空间列表</h6>
+<p></p>
+
+<Message @ref="MessageElement" />
+
+<Row ItemsPerRow="ItemsPerRow.Twelve">
+    <Row ColSpan="11">
+    </Row>
+    <Button Color="Color.Secondary" Text="添加名字空间" OnClick="@OnButtonAddClick" />
+</Row>
+<p></p>
+<Row ItemsPerRow="ItemsPerRow.One">
+    <Table TItem="DataNameSpace" Items="@Items"
+           OnDeleteAsync="@OnDeleteAsync" OnSaveAsync="@OnSaveAsync"
+           IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+           UseComponentWidth="false" AllowResizing="false" IsBordered="true"
+           ShowExtendButtons="true" FixedExtendButtonsColumn="true"
+           ShowLoading="true">
+        <TableColumns>
+            <TableColumn @bind-Field="@context.NameSpace" Fixed="true" />
+            <TableColumn @bind-Field="@context.Desc" Fixed="true" />
+        </TableColumns>
+    </Table>
+</Row>
+
+<p></p>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    Message MessageElement { get; set; }
+    List<DataNameSpace> Items { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sc = ManagerCCenter.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerManager>();
+
+        var list_ns = await container.GetAllNameSpace();
+
+        Items.Clear();
+        if (list_ns != null)
+        {
+            Items.AddRange(list_ns);
+        }
+        Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+        StateHasChanged();
+    }
+
+    async Task OnButtonAddClick()
+    {
+        DataNameSpace ns = new()
+            {
+                _id = string.Empty,
+                NameSpace = string.Empty,
+                Desc = string.Empty,
+            };
+
+        await DialogService.ShowSaveDialog<NameSpaceDlgAdd>("添加名字空间",
+        async () =>
+        {
+            var sc = ManagerCCenter.ServiceClient;
+            var container = sc.GetContainerRpc<IContainerManager>();
+            var ns_added = await container.AddNameSpace(ns.NameSpace, ns.Desc);
+
+            if (ns_added == null)
+            {
+                await ToastService.Show(new ToastOption()
+                    {
+                        Category = ToastCategory.Error,
+                        Title = "错误通知",
+                        Content = "添加NameSpace失败，已存在！"
+                    });
+
+                return false;
+            }
+            else
+            {
+                ns._id = ns_added._id;
+                ns.NameSpace = ns_added.NameSpace;
+                ns.Desc = ns_added.Desc;
+            }
+
+            Items.Add(ns);
+            Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+            StateHasChanged();
+
+            await ToastService.Show(new ToastOption()
+                {
+                    Category = ToastCategory.Success,
+                    Title = "成功通知",
+                    Content = "添加NameSpace成功！"
+                });
+
+            return true;
+        },
+        (Dictionary<string, object> m) =>
+        {
+            m["Value"] = ns;
+        },
+        (DialogOption op) =>
+        {
+            op.Size = Size.Medium;
+        });
+    }
+
+    async Task<bool> OnDeleteAsync(IEnumerable<DataNameSpace> items)
+    {
+        var sc = ManagerCCenter.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerManager>();
+
+        bool ok = true;
+        foreach (var i in items)
+        {
+            bool b = await container.RemoveNameSpace(i._id);
+            if (!b)
+            {
+                ok = false;
+            }
+            else
+            {
+                Items.RemoveAll(ns => ns._id == i._id);
+            }
+        }
+
+        Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+
+        StateHasChanged();
+
+        return ok;
+    }
+
+    async Task<bool> OnSaveAsync(DataNameSpace item, ItemChangedType change_type)
+    {
+        var sc = ManagerCCenter.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerManager>();
+
+        var ns_new = await container.UpdateNameSpace(item._id, item.NameSpace, item.Desc);
+
+        bool ok = ns_new != null;
+
+        if (ok)
+        {
+            foreach (var i in Items)
+            {
+                if (i._id == ns_new._id)
+                {
+                    i.NameSpace = ns_new.NameSpace;
+                    i.Desc = ns_new.Desc;
+                }
+            }
+
+            Items.Sort((a, b) => { return a.NameSpace.CompareTo(b.NameSpace); });
+        }
+
+        return ok;
+    }
+}

@@ -1,0 +1,30 @@
+﻿@using Data
+
+<li class="chatmsg @(IsCurrentUser?"user-msg":"service-msg")">
+    @if (IsCurrentUser)
+    {
+        <div class="showtime">@Message.Time.ToShortTimeString()</div>
+    }
+    <div class="avatar">
+        @if (IsCurrentUser)
+        {
+            <img class="my-circle" src="/images/avatar-red2.png">
+        }
+        else
+        {
+            <img class="my-circle" src="/images/avatar-admin2.png">
+        }
+    </div>
+    <div class="@(IsCurrentUser?"outer-right":"outer-left")">
+        <div class="msg-body">
+            @if (Message.Type == MessageType.Image)
+            {
+                <pre><img src="@Message.Body" /></pre>
+            }
+            else
+            {
+                <pre>@Message.Body</pre>
+            }
+        </div>
+    </div>
+</li>

@@ -1,0 +1,19 @@
+{
+	"DEF": {
+		"Env": "Pro",
+		"Cluster": "Cluster",
+		"LocalIpPrefix": "192.168.",
+		"Timezone": "Asia/Shanghai",
+		"ZkConnectString": "localhost:2181",
+		"RedisConnectString": "localhost:6379",
+		"RedisName": "1",
+		"MQConnectString": "localhost",
+		"LogEnableOpenObserve": false,
+		"OpenObserveUrl": "http://127.0.0.1:5080",
+		"OpenObserveLogin": "a@a.com",
+		"OpenObserveKey": "123456",
+		"LogMongoDBConnectString": "mongodb://localhost:27017",
+		"LogMongoDBName": "Logs",
+		"ResponseTimeoutWithDebugger": 6000
+	}
+}

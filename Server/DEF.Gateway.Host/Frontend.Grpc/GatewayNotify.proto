@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+package DEF.Gateway;
+
+service NotifySDK {
+  rpc Notify (NotifyRequest) returns (google.protobuf.Empty);
+}
+
+message NotifyRequest {
+  int32 id = 1;
+  bytes data = 2;
+  int32 serviceType = 3;
+  string sessionGuid = 4;
+}

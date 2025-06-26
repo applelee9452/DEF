@@ -1,0 +1,15 @@
+{
+	"Service": {
+		"ServiceName": "DEF.CCenter",
+		"OrleansGatewayPort": 10003,
+		"OrleansSiloPort": 10004,
+		"MongoDBConnectString": "mongodb://localhost:27017",
+		"MongoDBName": "CCenter"
+	},
+	"ServiceClient": {
+		"ServiceDiscoverListenServices": []
+	},
+	"DEF.CCenter": {
+		"LogFileName": "CCenter"
+	}
+}

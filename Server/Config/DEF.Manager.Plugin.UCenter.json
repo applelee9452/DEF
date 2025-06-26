@@ -1,0 +1,5 @@
+{
+	"DbConnectionString": "mongodb://localhost:27017",
+	"DBName": "UCenter",
+	"AgentUrlPrefix": "https://192.168.100.100:5005/download?agent_id="
+}

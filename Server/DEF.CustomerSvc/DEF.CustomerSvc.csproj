@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Configurations>Debug;Release;DebugS;ReleaseS</Configurations>
+  </PropertyGroup>
+  <ItemGroup>
+    <Watch Include="**\*.js;**\*.css" Exclude="node_modules\**\*;**\*.js.map;obj\**\*;bin\**\*" />
+  </ItemGroup>
+</Project>

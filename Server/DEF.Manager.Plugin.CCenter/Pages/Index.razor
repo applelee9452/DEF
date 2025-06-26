@@ -1,0 +1,44 @@
+﻿@using BootstrapBlazor.Components
+@using Microsoft.AspNetCore.Components
+@using System.Threading
+@implements IDisposable
+
+<p></p>
+<h6>配置中心首页</h6>
+<p></p>
+
+<Message @ref="MessageElement" />
+
+<p></p>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    System.Threading.Timer Timer { get; set; }
+    Message MessageElement { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        //<span>@dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+        //<span>@dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+        //<span>@ev.TotalTaxGolds.ToString("N0")</span>
+
+        Timer = new System.Threading.Timer(new TimerCallback(async _ =>
+        {
+            await InvokeAsync(() => { StateHasChanged(); });
+
+        }), null, 1000, 1000);
+
+        return Task.CompletedTask;
+    }
+
+    void IDisposable.Dispose()
+    {
+        if (Timer != null)
+        {
+            Timer.Dispose();
+            Timer = null;
+        }
+    }
+}

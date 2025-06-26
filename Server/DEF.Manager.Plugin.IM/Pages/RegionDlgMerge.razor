@@ -1,0 +1,35 @@
+﻿@implements IDisposable
+
+<Row ItemsPerRow="ItemsPerRow.One">
+    <Card>
+        <BodyTemplate>
+            <div class="row form-inline">
+                <div class="col-12">
+                    <BootstrapInputNumber PlaceHolder="请输入源分区Id..." TValue="int" ShowLabel="true" DisplayText="源分区" @bind-Value="@ValueSrc.RegionId" />
+                    <BootstrapInputNumber PlaceHolder="请输入目标分区Id..." TValue="int" ShowLabel="true" DisplayText="目标分区" @bind-Value="@ValueTarget.RegionId" />
+                </div>
+            </div>
+        </BodyTemplate>
+    </Card>
+</Row>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+
+    [Parameter]
+    public Region ValueSrc { get; set; }
+
+    [Parameter]
+    public Region ValueTarget { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    void IDisposable.Dispose()
+    {
+    }
+}

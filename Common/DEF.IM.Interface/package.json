@@ -1,0 +1,21 @@
+{
+  "name": "com.cragon.defiminterface",
+  "displayName": "DEF.IM.Interface",
+  "category": "DEF",
+  "description": "DEF",
+  "version": "1.0.0",
+  "unity": "2022.3",
+  "keywords": [
+    "DEF"
+  ],
+  "author": {
+    "name": "li.yong",
+    "email": "xiaolige945@vip.qq.com",
+    "url": ""
+  },
+  "dependencies": {
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.assetbundle": "1.0.0",
+    "com.unity.modules.audio": "1.0.0"
+  }
+}

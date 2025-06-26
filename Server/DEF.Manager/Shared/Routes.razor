@@ -1,0 +1,10 @@
+﻿@inject ManagerPlugins ManagerPlugins
+
+<BootstrapBlazorRoot>
+    <Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="@ManagerPlugins.Assemblys">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            </AuthorizeRouteView>
+        </Found>
+    </Router>
+</BootstrapBlazorRoot>

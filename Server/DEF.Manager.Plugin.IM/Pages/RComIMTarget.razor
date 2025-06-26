@@ -1,0 +1,64 @@
+﻿@using System.Text
+@inject ManagerIM ManagerIM
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ToastService ToastService
+
+<div class="row form-inline">
+	<InputSelect @bind-Value="@IMTargetType" ShowLabel="true" DisplayText="目标类型">
+		@foreach (var option in Enum.GetValues(typeof(IMTargetType)))
+		{
+			<option value="@option">@option</option>
+		}
+	</InputSelect>
+</div>
+
+@if (IMTargetType == IMTargetType.Region)
+{
+	<ul>
+		@foreach (var partition in AllRegionList)
+		{
+			<li>
+				<input type="checkbox"
+					   checked="@ActiveRegionDict[partition.RegionGuid]"
+					   @onchange="(e) => OnCheckBoxRegionChanged(e, partition.RegionGuid)" /> @partition.RegionName
+			</li>
+		}
+	</ul>
+}
+
+@if (IMTargetType == IMTargetType.Player)
+{
+	<RComPlayerInfo @ref="RComPlayerInfo" />
+}
+
+@code
+{
+	public IMTargetType IMTargetType { get; set; }
+	public List<Region> AllRegionList { get; set; } = [];
+	Dictionary<string, bool> ActivePlayerDict { get; set; } = new();
+	Dictionary<string, bool> ActiveRegionDict { get; set; } = new();
+	RComPlayerInfo RComPlayerInfo { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		var container = ManagerIM.ServiceClient.GetContainerRpc<IContainerStatefulIMRegionMgr>();
+		var list = await container.GetRegionList();
+
+		AllRegionList.Clear();
+		if (list != null)
+		{
+			AllRegionList.AddRange(list);
+		}
+
+		for (int i = 0; i < AllRegionList.Count; i++)
+		{
+			var region = AllRegionList[i];
+			ActiveRegionDict.Add(region.RegionGuid, true);
+		}
+	}
+
+	void OnCheckBoxRegionChanged(ChangeEventArgs e, string r_guid)
+	{
+		ActiveRegionDict[r_guid] = (bool)e.Value;
+	}
+}

@@ -1,0 +1,64 @@
+﻿@using System.Text
+@inject ManagerIM ManagerIM
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ToastService ToastService
+
+<p></p>
+<h6>系统公告</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.Twelve">
+    <Row ColSpan="10">
+        <Row ItemsPerRow="ItemsPerRow.Twelve">
+            <Row ColSpan="5">
+                <BootstrapInput @bind-Value="Msg" DisplayText="请输入系统公告消息..." ShowLabel="false" />
+            </Row>
+            <Row ColSpan="5">
+                <Button Color="Color.Primary" Text="广播" OnClick="@BroadcastMarquee" />
+            </Row>
+        </Row>
+    </Row>
+</Row>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    string Msg { get; set; }
+
+    async Task BroadcastMarquee(MouseEventArgs args)
+    {
+        if (string.IsNullOrEmpty(Msg))
+        {
+            return;
+        }
+
+        BIMMarquee marquee = new()
+            {
+                SenderType = IMMarqueeSenderType.System,
+                SenderGuid = string.Empty,
+                NickName = "aaa",
+                VIPLevel = 1,
+                Priority = IMMarqueePriority.Normal,
+                Msg = Msg,
+                FormatKey = Msg,
+                MsgParamsList = []
+            };
+
+        var sc = ManagerIM.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerStatefulIMMarquee>();
+
+        await container.BroadcastMarquee(marquee);
+
+        Msg = string.Empty;
+
+        StateHasChanged();
+
+        await ToastService.Show(new ToastOption()
+            {
+                Category = ToastCategory.Error,
+                Title = "成功通知",
+                Content = $"系统公告消息：{marquee.Msg}，广播成功！"
+            });
+    }
+}

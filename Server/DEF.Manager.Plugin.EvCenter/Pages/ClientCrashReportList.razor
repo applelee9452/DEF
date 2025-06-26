@@ -1,0 +1,122 @@
+﻿@attribute [Authorize]
+@using MongoDB.Bson;
+@using MongoDB.Driver;
+@inject IHttpClientFactory HttpClientFactory
+@inject ManagerEvCenter ManagerEvCenter
+
+<p></p>
+<h6>客户端错误日志列表</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="LogItem" Items="@Items"
+		   IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+		   UseComponentWidth="false" AllowResizing="false" IsBordered="true"
+		   ShowLoading="true" ShowExportButton="true">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.Level" Width="100" Fixed="true" />
+			<TableColumn @bind-Field="@context.Dt" Width="150" Fixed="true" Text="时间">
+				<Template Context="v">
+					<div>@v.Row.Dt.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.Message" TextWrap="true">
+				<Template Context="v">
+					@{
+						var level = v.Row.Level;
+						@if (level == "Warning")
+						{
+							<span><font color="#D94600">@v.Row.Message</font></span>
+						}
+						else if (level == "Error")
+						{
+							<span><font color="red">@v.Row.Message</font></span>
+						}
+						else
+						{
+							<span>@v.Row.Message</span>
+						}
+					}
+				</Template>
+			</TableColumn>
+		</TableColumns>
+	</Table>
+	<Pagination PageItems="@PageSize" PageCount="@TotalCount" PageIndex="@PageIndex" OnPageLinkClick="@OnPageLinkClick" ShowPaginationInfo="true"></Pagination>
+</Row>
+
+<p></p>
+
+@code
+{
+	public class LogItem
+	{
+		public string Level { get; set; }
+		public DateTime Dt { get; set; }
+		public string Message { get; set; }
+	}
+
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	int PageIndex { get; set; } = 1;
+	int PageSize { get; set; } = 100;
+	int TotalCount { get; set; }
+	List<LogItem> Items { get; set; } = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		PageIndex = 1;
+
+		await QueryData();
+	}
+
+	async Task QueryData()
+	{
+		try
+		{
+			var collection = ManagerEvCenter.Db.Database.GetCollection<BsonDocument>(typeof(EvClientCrashReport).Name);
+			FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Empty;
+			var sorter = Builders<BsonDocument>.Sort.Descending("Dt");// 降序，最新的在第一页
+
+			TotalCount = (int)await collection.Find(filter).CountDocumentsAsync();
+			int page_count = (int)Math.Ceiling(TotalCount / (float)PageSize);
+
+			if (PageIndex > page_count)
+			{
+				PageIndex = page_count;
+			}
+			if (PageIndex < 1)
+			{
+				PageIndex = 1;
+			}
+
+			var list_data = await collection.Find(filter).Sort(sorter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+			Items.Clear();
+			foreach (var i in list_data)
+			{
+				LogItem item = new LogItem()
+					{
+					//Level = i["Level"].ToString(),
+						Dt = DateTime.Parse(i["Dt"].ToString()),//.ToUniversalTime(),
+						Message = i["Message"].ToString(),
+					//SourceContext = i["SourceContext"].ToString(),
+					//Exception = i["Exception"].ToString(),
+					};
+				Items.Add(item);
+			}
+		}
+		catch (Exception e)
+		{
+			System.Console.WriteLine("LogMgr.QueryData() " + e.ToString());
+		}
+
+		StateHasChanged();
+	}
+
+	async Task OnPageLinkClick(int page_index)
+	{
+		PageIndex = page_index;
+
+		await QueryData();
+	}
+}

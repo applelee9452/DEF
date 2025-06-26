@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<RootNamespace>DEF.Manager</RootNamespace>
+		<Product>DEF</Product>
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BootstrapBlazor" Version="9.7.4" />
+		<PackageReference Include="BootstrapBlazor.Chart" Version="9.0.0" />
+		<PackageReference Include="BootstrapBlazor.TableExport" Version="9.2.6" />
+		<PackageReference Include="BootstrapBlazor.BarCode" Version="9.0.1" />
+		<PackageReference Include="BlazorInputFile" Version="0.2.0" />
+		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DEF.Manager.Plugin\DEF.Manager.Plugin.csproj" />
+		<ProjectReference Include="..\DEF.UCenter.Interface\DEF.UCenter.Interface.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Update="Pages\AgentLink.razor">
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+		</Content>
+		<Content Update="Pages\AgentList.razor">
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+		</Content>
+	</ItemGroup>
+
+</Project>

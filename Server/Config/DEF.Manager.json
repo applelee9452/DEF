@@ -1,0 +1,60 @@
+{
+	"ServiceClient": {
+		"ServiceDiscoverListenServices": [
+			{
+				"ServiceName": "DEF.CCenter",
+				"OrleansGatewayPort": 10003,
+				"AssemblyInterfacePath": "",
+				"AssemblyInterfaceName": "",
+				"IsStateful": false
+			},
+			{
+				"ServiceName": "DEF.UCenter",
+				"OrleansGatewayPort": 10012,
+				"AssemblyInterfacePath": "",
+				"AssemblyInterfaceName": "",
+				"IsStateful": false
+			},
+			{
+				"ServiceName": "Guaji",
+				"OrleansGatewayPort": 10051,
+				"AssemblyInterfacePath": "",
+				"AssemblyInterfaceName": "",
+				"IsStateful": true
+			}
+		]
+	},
+	"DEF.Manager": {
+		"LogFileName": "Manager",
+		"ListenPort": 10053,
+		"SslFileName": "guaji-proshanghai.cragon.cn.pfx",
+		"SslPwd": "osxk7pa4",
+		"DbConnectionString": "mongodb://localhost:27017",
+		"DBName": "Manager",
+		"LogServices": [
+			"Mao",
+			"DEF.CCenter",
+			"DEF.EvCenter",
+			"DEF.UCenter",
+			"DEF.IM"
+		],
+		"PluginDefault": "Guaji",
+		"Plugins": [
+			{
+				"AssemblyPath": "../../../../../../Guaji3/Server/DEF.Manager.Plugin.Guaji/bin/Debug/net8.0/",
+				"AssemblyName": "DEF.Manager.Plugin.Guaji",
+				"EntryType": "DEF.Manager.ManagerGuaji"
+			},
+			{
+				"AssemblyPath": "../../../../DEF.Manager.Plugin.CCenter/bin/Debug/net8.0/",
+				"AssemblyName": "DEF.Manager.Plugin.CCenter",
+				"EntryType": "DEF.Manager.ManagerCCenter"
+			},
+			{
+				"AssemblyPath": "../../../../DEF.Manager.Plugin.UCenter/bin/Debug/net8.0/",
+				"AssemblyName": "DEF.Manager.Plugin.UCenter",
+				"EntryType": "DEF.Manager.ManagerUCenter"
+			}
+		]
+	}
+}

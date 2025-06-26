@@ -1,0 +1,22 @@
+{
+    "name": "DEF.IM.Interface",
+    "rootNamespace": "DEF",
+    "references": [
+        "VContainer",
+        "YooAsset",
+        "MemoryPack.Unity",
+        "DEF.Unity.protobuf-net",
+        "DEF.Unity.Mongo",
+        "DEF.Unity.LitJson",
+        "DEF.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

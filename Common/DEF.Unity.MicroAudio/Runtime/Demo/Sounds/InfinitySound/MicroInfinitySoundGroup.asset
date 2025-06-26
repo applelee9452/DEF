@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6746f10705d380443ae6a984c239a613, type: 3}
+  m_Name: MicroInfinitySoundGroup
+  m_EditorClassIdentifier: 
+  _loopClip: {fileID: 8300000, guid: 16327ef54b402494ea0cb6ef4e24fd68, type: 3}
+  _loopClipVolume: 1
+  _loopClipPitch: 1
+  _startClip: {fileID: 0}
+  _startClipVolume: 1
+  _startClipPitch: 1
+  _endClip: {fileID: 0}
+  _endClipVolume: 1
+  _endClipPitch: 1
+  _randomClips:
+  - {fileID: 8300000, guid: 064822d6a94343c43ba1f919b8327fc0, type: 3}
+  - {fileID: 8300000, guid: bdf1e5ab4c8c9d34e9f267b6e4adae03, type: 3}
+  - {fileID: 8300000, guid: 32a17efb03020164e83afd7669d50b6e, type: 3}
+  - {fileID: 8300000, guid: e89073d6fde719e42b74d083efb78067, type: 3}
+  - {fileID: 8300000, guid: c17387f05aa4c604db7b45f0c571b356, type: 3}
+  _randomClipsVolume: 1
+  _randomClipsPitch: 1
+  _minTimeBetweenRandomClips: 0
+  _maxTimeBetweenRandomClips: 0.5
+  _delayFirstRandomClip: 0

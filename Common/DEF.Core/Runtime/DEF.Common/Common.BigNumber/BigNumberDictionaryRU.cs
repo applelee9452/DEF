@@ -1,0 +1,70 @@
+﻿namespace DEF
+{
+    public class BigNumberDictionaryRU : IBigNumberDictionary
+    {
+        private string[] dictionary = {
+            "",
+            "тыс",
+            "млн",
+            "млрд",
+            "трлн",
+            "aa",
+            "ab",
+            "ac",
+            "ad",
+            "ae",
+            "af",
+            "ag",
+            "ah",
+            "ai",
+            "aj",
+            "ak",
+            "al",
+            "am",
+            "an",
+            "ao",
+            "ap",
+            "aq",
+            "ar",
+            "as",
+            "at",
+            "au",
+            "av",
+            "aw",
+            "ax",
+            "ay",
+            "az",
+            "ba",
+            "bb",
+            "bc",
+            "bd",
+            "be",
+            "bf",
+            "bg",
+            "bh",
+            "bi",
+            "bj",
+            "bk",
+            "bl",
+            "bm",
+            "bn",
+            "bo",
+            "bp",
+            "bq",
+            "br",
+            "bs",
+            "bt",
+            "bu",
+            "bv",
+            "bw",
+            "bx",
+            "by",
+            "bz",
+        };
+
+        public string GetTranslatedOrder(BigNumberOrder order)
+        {
+            return this.dictionary[(int)order];
+        }
+    }
+}

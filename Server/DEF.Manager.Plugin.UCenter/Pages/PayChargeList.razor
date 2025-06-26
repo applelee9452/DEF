@@ -1,0 +1,278 @@
+﻿@using BootstrapBlazor.Components
+@using DEF.Manager.Components
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using MongoDB.Bson
+@using MongoDB.Driver
+@inject ManagerUCenter ManagerUCenter
+@inject ManagerDb ManagerDb
+
+<h6>支付订单列表</h6>
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<RComPlayerSearch @ref="RComPlayerSearch" OnPlayerSearch="OnPlayerSearch" />
+</Row>
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<RComAgentSearch @ref="RComAgentSearch" OnAgentSearch="OnPlayerSearch" />
+</Row>
+
+<Row ItemsPerRow="ItemsPerRow.Two">
+	<BootstrapInputGroup>
+		<RComDateRangePicker @ref="RComDateRangePicker" OnDateRangeSelected="HandleDateRangeSelected" />
+		<Button Color="Color.Primary" Text="查询" OnClick="@QueryData" />
+	</BootstrapInputGroup>
+</Row>
+
+<Row ItemsPerRow="ItemsPerRow.Two">
+	<Card>
+		<BodyTemplate>
+			<p class="card-text">完成订单: @TotalOrderCount 个 | 金额总计: @TotalAmount 元  </p>
+		</BodyTemplate>
+	</Card>
+</Row>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="DataPayChargeView" Items="@ListPayCharge"
+		   OnSaveAsync="@OnSaveAsync"
+		   TableSize="TableSize.Compact"
+		   ShowEditButton="true"
+		   IsStriped="true"
+		   IsMultipleSelect="false"
+		   ClickToSelect="true"
+		   IsBordered="true"
+		   ShowLoading="true">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.AgentNickName" Text="直属代理" />
+			<TableColumn @bind-Field="@context.AgentId" Text="直属代理ID" />
+			<TableColumn @bind-Field="@context.PlayerNickName" Text="玩家昵称" />
+			<TableColumn @bind-Field="@context.PlayerUid" Text="玩家UId" />
+			<TableColumn @bind-Field="@context.Amount" Text="金额">
+				<Template Context="v">
+					<div>"{@v.Row.Amount * 0.01f}元"</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.ItemName" Text="道具名" />
+			<TableColumn @bind-Field="@context.ItemTbId" Text="道具Id" />
+			<TableColumn @bind-Field="@context.Receipt" Text="支付平台凭据" />
+			<TableColumn @bind-Field="@context.UpdatedTime" Text="完成时间">
+				<Template Context="v">
+					<div>@v.Row.UpdatedTime.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.Id" Text="ChargeId" />
+			<TableColumn @bind-Field="@context.AccountId" Text="账号Id" />
+			<TableColumn @bind-Field="@context.PlayerGuid" Text="玩家Guid" />
+			<TableColumn @bind-Field="@context.PayType" Text="支付方式" />
+			<TableColumn @bind-Field="@context.Currency" Text="货币类型" />
+		</TableColumns>
+	</Table>
+	<Pagination ShowPaginationInfo="true" PageItems="@PageSize" PageCount="@PageTotalCount" PageIndex="@PageIndex" OnPageLinkClick="@OnPageLinkClick"></Pagination>
+</Row>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	List<DataPayChargeView> ListPayCharge { get; set; } = new();
+
+	int PageIndex { get; set; } = 1;
+	int PageSize { get; set; } = 50;
+	int PageTotalCount { get; set; }
+
+	RComDateRangePicker RComDateRangePicker { get; set; }
+	RComAgentSearch RComAgentSearch { get; set; }
+	RComPlayerSearch RComPlayerSearch { get; set; }
+
+	string SelectPlayerGuid { get; set; }
+
+	long TotalAmount { get; set; }
+	long TotalOrderCount { get; set; }
+
+	DateTime DateTimeStart { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await QueryData();
+	}
+
+	async Task QueryData()
+	{
+		var state = await AuthenticationState;
+		if (!state.User.Identity!.IsAuthenticated)
+		{
+			return;
+		}
+
+		// 通过登录用户初始化上下文
+		var user_name = state.User.Identity!.Name!;
+		var user = await ManagerDb.GetUserByUserName(user_name, false);
+		if (user == null || user.Role == RoleType.Guest)
+		{
+			return;
+		}
+
+		var collection_paycharge = ManagerUCenter.Db.Database.GetCollection<DataPayCharge>(StringDef.DbCollectionDataPayCharge);
+
+		var role_filter = GetRoleFilter(user);
+		if (role_filter is null)
+		{
+			return;
+		}
+
+		var time_filter = GetTimeFilter();
+
+		var agent_filter = GetAgentFilter();
+
+		var player_filter = GetPlayerFilter();
+
+		var finish_status_filter = Builders<DataPayCharge>.Filter.Where(i => i.Status == PayChargeStatus.AckConfirm);
+
+		var filter = role_filter & time_filter & agent_filter & player_filter & finish_status_filter;
+
+		var result = await collection_paycharge.Aggregate().Match(filter).Group(o => true, g => new
+		{
+			TotalAmount = g.Sum(o => o.Amount),
+			TotalCount = g.Count()
+		})
+		.FirstOrDefaultAsync();
+
+		TotalAmount = (result?.TotalAmount ?? 0) / 100;
+		TotalOrderCount = (result?.TotalCount ?? 0);
+
+		PageTotalCount = (int)Math.Ceiling(TotalOrderCount / (float)PageSize);
+
+		if (PageIndex > PageTotalCount)
+		{
+			PageIndex = PageTotalCount;
+		}
+
+		if (PageIndex < 1)
+		{
+			PageIndex = 1;
+		}
+
+		var list_paycharge = await collection_paycharge.Find(filter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+		ListPayCharge.Clear();
+		foreach (var pay_charge in list_paycharge)
+		{
+			var pay_data_view = new DataPayChargeView(pay_charge);
+			UCenterPlayerInfo player_info = await ManagerUCenter.GetPlayerInfoByGuid(pay_data_view.PlayerGuid);
+			pay_data_view.PlayerNickName = player_info?.PlayerNickName;
+			pay_data_view.PlayerUid = player_info?.PlayerUid;
+
+			ulong agent_id = 0;
+			if (pay_data_view.AgentParents?.Length > 0)
+				agent_id = pay_data_view.AgentParents.First();
+
+			DataAgent data_agent = await ManagerUCenter.GetDataAgentById(agent_id);
+			pay_data_view.AgentId = agent_id.ToString();
+			pay_data_view.AgentNickName = data_agent.UserName;
+			ListPayCharge.Add(pay_data_view);
+		}
+
+		StateHasChanged();
+	}
+
+	// 角色筛选
+	public FilterDefinition<DataPayCharge> GetRoleFilter(User user)
+	{
+		FilterDefinition<DataPayCharge> role_filter = null;
+		switch (user.Role)
+		{
+			case RoleType.Agent:
+				ulong agent_id = user.AgentId;
+				role_filter = Builders<DataPayCharge>.Filter.ElemMatch(i => i.AgentParents, item => item == agent_id);
+				break;
+			case RoleType.Platform:
+			case RoleType.Admin:
+				role_filter = Builders<DataPayCharge>.Filter.Empty;
+				break;
+		}
+		return role_filter;
+	}
+
+	// 日期筛选
+	public FilterDefinition<DataPayCharge> GetTimeFilter()
+	{
+		DateTime[] date_time_range = RComDateRangePicker.GetSelectedDateRange();
+		var start_time = date_time_range[0];
+		var end_time = date_time_range[1];
+
+		var time_filter = Builders<DataPayCharge>.Filter.Gte(i => i.UpdatedTime, start_time.AddHours(0)) & Builders<DataPayCharge>.Filter.Lte(i => i.UpdatedTime, end_time.AddHours(0));
+
+		return time_filter;
+	}
+
+	// 代理筛选
+	public FilterDefinition<DataPayCharge> GetAgentFilter()
+	{
+		if (string.IsNullOrEmpty(RComAgentSearch?.DataAgentView?.UserName))
+		{
+			return Builders<DataPayCharge>.Filter.Empty;
+		}
+
+		FilterDefinition<DataPayCharge> filter = null;
+
+		ulong agent_id = RComAgentSearch.DataAgentView.AgentId;
+
+		if (RComAgentSearch.IsDirectAgent)
+		{
+			filter = Builders<DataPayCharge>.Filter.Where(i => i.AgentParents[0] == agent_id);
+		}
+		else
+		{
+			filter = Builders<DataPayCharge>.Filter.ElemMatch(i => i.AgentParents, item => item == agent_id);
+		}
+
+		return filter;
+	}
+
+	// 玩家筛选
+	public FilterDefinition<DataPayCharge> GetPlayerFilter()
+	{
+		if (string.IsNullOrEmpty(RComPlayerSearch?.PlayerInfo?.PlayerGuid))
+		{
+			return Builders<DataPayCharge>.Filter.Empty;
+		}
+		var filter = Builders<DataPayCharge>.Filter.Where(i => i.PlayerGuid == RComPlayerSearch.PlayerInfo.PlayerGuid);
+		return filter;
+	}
+
+	async Task OnPageLinkClick(int page_index)
+	{
+		PageIndex = page_index;
+
+		await QueryData();
+	}
+
+	async Task HandleDateRangeSelected()
+	{
+		await QueryData();
+	}
+
+	async Task OnPlayerSearch()
+	{
+		await Task.CompletedTask;
+		await QueryData();
+	}
+
+	async Task<bool> OnSaveAsync(DataPayCharge item, ItemChangedType change_type)
+	{
+		// var collection = ManagerUCenter.Db.Database.GetCollection<DataPayCharge>(StringDef.DbCollectionDataPayCharge);
+
+		// FilterDefinition<DataPayCharge> filter = null;
+		// filter = Builders<DataPayCharge>.Filter.Eq("_id", item.Id);
+
+		// var update = Builders<DataPayCharge>.Update
+		// 	.Set(x => x.AccountStatus, item.AccountStatus);
+
+		// UpdateOptions update_options = new() { IsUpsert = true };
+
+		// var update_result = await collection.UpdateOneAsync(filter, update, update_options);
+
+		await Task.Delay(1);
+
+		return true;
+	}
+}

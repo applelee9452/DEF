@@ -1,0 +1,15 @@
+{
+	"Service": {
+		"ServiceName": "DEF.IM",
+		"OrleansGatewayPort": 10007,
+		"OrleansSiloPort": 10008,
+		"MongoDBConnectString": "mongodb://localhost:27017",
+		"MongoDBName": "IM"
+	},
+	"ServiceClient": {
+		"ServiceDiscoverListenServices": []
+	},
+	"DEF.IM": {
+		"LogFileName": "IM"
+	}
+}

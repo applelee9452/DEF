@@ -1,0 +1,56 @@
+﻿@using System.Text
+@inject ManagerIM ManagerIM
+
+<p></p>
+<h6>控制台</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.Twelve">
+    <Row ColSpan="10">
+        <Textarea rows="30" @bind-Value="Results" readonly />
+    </Row>
+    <Row ColSpan="10">
+        <Row ItemsPerRow="ItemsPerRow.Twelve">
+            <Row ColSpan="5">
+                <BootstrapInput @bind-Value="CmdStr" DisplayText="请输入指令..." ShowLabel="false" />
+            </Row>
+            <Row ColSpan="5">
+                <Button Color="Color.Primary" Text="执行" OnClick="@ExcuteCmd" />
+            </Row>
+        </Row>
+    </Row>
+</Row>
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    string CmdStr { get; set; }
+    string Results { get; set; }
+    List<string> ListCmdResultStr { get; set; } = [];
+
+    async Task ExcuteCmd(MouseEventArgs args)
+    {
+        if (string.IsNullOrEmpty(CmdStr))
+        {
+            return;
+        }
+
+        var sc = ManagerIM.ServiceClient;
+        var container = sc.GetContainerRpc<IContainerStatefulIMConsole>();
+
+        var r = await container.ExcuteCmd2(CmdStr);
+
+        ListCmdResultStr.Add(r);
+        if (ListCmdResultStr.Count > 30) ListCmdResultStr.RemoveAt(0);
+
+        StringBuilder sb = new(1024);
+        foreach (var i in ListCmdResultStr)
+        {
+            sb.AppendLine(i);
+        }
+        Results = sb.ToString();
+
+        CmdStr = string.Empty;
+    }
+}

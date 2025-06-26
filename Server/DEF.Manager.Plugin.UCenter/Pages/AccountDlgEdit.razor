@@ -1,0 +1,35 @@
+﻿@implements IDisposable
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Card>
+		<BodyTemplate>
+			<BootstrapInput PlaceHolder="请输入AccountGuid..." @bind-Value="@Value.Id" ShowLabel="true" DisplayText="AccountGuid" />
+			<p></p>
+			<InputSelect @bind-Value="@Value.AccountStatus" ShowLabel="true" DisplayText="账号状态">
+				@foreach (var option in Enum.GetValues(typeof(AccountStatus)))
+				{
+					<option value="@option">@option</option>
+				}
+			</InputSelect>
+		</BodyTemplate>
+	</Card>
+</Row>
+<p></p>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+
+	[Parameter]
+	public DataAccount Value { get; set; }
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+	}
+
+	void IDisposable.Dispose()
+	{
+	}
+}

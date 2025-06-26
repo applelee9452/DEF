@@ -1,0 +1,15 @@
+{
+	"Service": {
+		"ServiceName": "DEF.EvCenter",
+		"OrleansGatewayPort": 10005,
+		"OrleansSiloPort": 10006,
+		"MongoDBConnectString": "mongodb://localhost:27017",
+		"MongoDBName": "EvCenter"
+	},
+	"ServiceClient": {
+		"ServiceDiscoverListenServices": []
+	},
+	"DEF.EvCenter": {
+		"LogFileName": "EvCenter"
+	}
+}

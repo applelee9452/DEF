@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>disable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>e5d86c2e-c25a-40de-af4e-dff292ab95ca</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<RootNamespace>DEF.UCenter</RootNamespace>
+		<Product>DEF</Product>
+		<OutputType>Exe</OutputType>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<Configurations>Debug;Release</Configurations>
+		<OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DefineConstants>TRACE</DefineConstants>
+		<NoWarn>IDE1006</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DefineConstants>TRACE</DefineConstants>
+		<NoWarn>IDE1006</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Text.Encodings.Web" Version="9.0.6" />
+		<PackageReference Include="FluentResults" Version="3.16.0" />
+		<PackageReference Include="HuaweiCloud.SDK.Core" Version="3.1.152" />
+		<PackageReference Include="HuaweiCloud.SDK.Vpc" Version="3.1.152" />
+		<PackageReference Include="Senparc.Weixin.MP" Version="16.23.8" />
+		<PackageReference Include="Senparc.Weixin.TenPay" Version="1.17.8" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DEF.CloudSvc\DEF.CloudSvc.csproj" />
+		<ProjectReference Include="..\DEF.UCenter.Interface\DEF.UCenter.Interface.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Dockerfile">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>

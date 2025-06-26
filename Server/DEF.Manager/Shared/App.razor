@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理后台</title>
+    <base href="/" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="stylesheet" href="_content/BootstrapBlazor.FontAwesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="_content/BootstrapBlazor/css/bootstrap.blazor.bundle.min.css" />
+    <link rel="stylesheet" href="_content/BootstrapBlazor/css/motronic.min.css" />
+    <link rel="stylesheet" href="DEF.Manager.styles.css" />
+    <link rel="stylesheet" href="css/site.css" />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(false)" />
+</head>
+
+<body>
+    <Routes @rendermode="new InteractiveServerRenderMode(false)" />
+    <ReconnectorOutlet ReconnectInterval="2000" @rendermode="new InteractiveServerRenderMode(false)" />
+    <script Src="_content/BootstrapBlazor/js/bootstrap.blazor.bundle.min.js"></script>
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

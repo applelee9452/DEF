@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package DEF.Gateway;
+
+service SDK {
+  rpc ClientStateless (ClientRequest) returns (ClientResponse);
+  rpc ClientAuthRequest (AuthRequest) returns (AuthResponse);
+  rpc ClientAuthed (AuthedInfo) returns (AuthedResult);
+  rpc ClientDisconnected (DisconnectedInfo) returns (DisconnectedResult);
+  rpc ClientStateful (ClientRequest2) returns (ClientResponse2);
+}
+
+message ClientRequest {
+  int32 id = 1;
+  string request = 2;
+  string clientIp = 3;
+}
+
+message ClientResponse {
+  string response = 1;
+}
+
+message AuthRequest {
+  string accId = 1;
+  string token = 2;
+  string nickName = 3;
+  string channelId = 4;// 默认渠道为空字符串
+  string platform = 5;// Client平台，目前可以取值Android, iOS, Pc
+  string region = 6;// Client区号，即国家码
+  string lan = 7;// Client语言
+  string inviteId = 8;// 邀请玩家PlayerId
+  string deviceId = 9;
+}
+
+message AuthResponse {
+  int32 errorCode = 1;
+  string sessionGuid = 2;
+  int32 gender = 3;// 0=未知，1=男，2=女
+}
+
+message AuthedInfo {
+  string accId = 1;
+  string sessionGuid = 2;
+  string gatewayIp = 3;
+  string clientIp = 4;
+  string nickName = 5;
+  int32 gender = 6;// 0=未知，1=男，2=女
+  string channelId = 7;// 默认渠道为空字符串
+  string platform = 8;// Client平台，目前可以取值Android, iOS, Pc
+  string region = 9;// Client区号，即国家码
+  string lan = 10;// Client语言
+  string inviteId = 11;// 邀请玩家PlayerId
+  string deviceId = 12;
+}
+
+message AuthedResult {
+  int32 errorCode = 1;
+}
+
+message DisconnectedInfo {
+  string sessionGuid = 1;
+  int32 reason = 2;
+}
+
+message DisconnectedResult {
+  int32 errorCode = 1;
+}
+
+message ClientRequest2 {
+  string sessionGuid = 1;
+  int32 id = 2;
+  bytes data = 3;
+}
+
+message ClientResponse2 {
+  int32 id = 1;
+  string response = 2;
+}

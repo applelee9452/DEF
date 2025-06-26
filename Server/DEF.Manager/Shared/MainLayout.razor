@@ -1,0 +1,149 @@
+﻿@using Microsoft.AspNetCore.Authentication.Cookies
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject ManagerContext ManagerContext
+@inject ManagerDb ManagerDb
+@inject ManagerSession ManagerSession
+@inject IJSRuntime JSRuntime
+
+<PageTitle>管理平台</PageTitle>
+
+@if (IsInit)
+{
+	<Layout ShowFooter="false" IsFullSide="true" IsPage="true">
+		<Header>
+			<div class="flex-fill"></div>
+			<Menu Items="@ListTopRightItem" DisableNavigation="false" OnClick="OnClickMenuItem" />
+			<Logout ImageUrl="@ManagerSession.User.Avatar" DisplayName="@ManagerSession.User.DisplayName" UserName="@ManagerSession.User.UserName">
+				<LinkTemplate>
+					<LogoutLink />
+				</LinkTemplate>
+			</Logout>
+		</Header>
+		<Side>
+			<div class="layout-banner">
+				<div class="layout-title"><span>管理平台</span></div>
+			</div>
+			<div class="layout-menu">
+				<Menu Items="@ManagerSession.NavMenuItems" DisableNavigation="false" IsVertical="true" IsAccordion="true" style="border-right: 1px solid #e6e6e6;" />
+			</div>
+		</Side>
+		<Main>
+			@Body
+		</Main>
+		<Footer>
+			<div class="text-center footer">Footer</div>
+		</Footer>
+	</Layout>
+}
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+
+	List<MenuItem> ListTopRightItem { get; } = [];
+
+	bool IsInit { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		// 检查是否已经认证
+
+		var state = await AuthenticationState;
+		if (!state.User.Identity!.IsAuthenticated)
+		{
+			NavigationManager.NavigateTo(CookieAuthenticationDefaults.LoginPath, true);
+			return;
+		}
+
+		// 通过登录用户初始化上下文
+		var user_name = state.User.Identity!.Name!;
+		var user = await ManagerDb.GetUserByUserName(user_name, false);
+
+		if (user == null)
+		{
+			NavigationManager.NavigateTo(CookieAuthenticationDefaults.LoginPath, true);
+			return;
+		}
+
+		user.Avatar = $"./images/{user.Avatar}.jpg";
+		ManagerSession.User = user;
+
+		// 初始化右上方所有微服务模块
+		var item = new MenuItem()
+			{
+				Id = "__general",
+				Text = "通用",
+				IsActive = true
+			};
+		ListTopRightItem.Add(item);
+
+		var role = await ManagerDb.GetRole(user_name);
+
+		// 初始化右上方所有微服务模块
+		var map_plugin = ManagerContext.GetPluginMap();
+		foreach (var i in map_plugin)
+		{
+			RoleType min_role = (RoleType)Enum.Parse(typeof(RoleType), i.Value.MinRole);
+			if (role >= min_role)
+			{
+				MenuItem menu_item = new()
+					{
+						Id = i.Value.Key,
+						Text = i.Value.Name
+					};
+				ListTopRightItem.Add(menu_item);
+			}
+		}
+
+		IsInit = true;
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await base.OnAfterRenderAsync(firstRender);
+
+		if (firstRender)
+		{
+			var state = await AuthenticationState;
+			if (!state.User.Identity!.IsAuthenticated)
+			{
+				return;
+			}
+
+			var item = ListTopRightItem.First();
+			if (item != null)
+			{
+				await OnButtonPluginClick(item.Id);
+			}
+
+			// todo，此处会抛异常
+			// 获得客户端时区信息
+			var module = await JSRuntime.LoadModule("./Shared/MainLayout.razor.js");
+			ManagerSession.TimezoneOffset = await module.InvokeAsync<int>("getTimezoneOffset");
+			await module.DisposeAsync();
+		}
+	}
+
+	Task OnClickMenuItem(MenuItem item)
+	{
+		return OnButtonPluginClick(item.Id);
+	}
+
+	async Task OnButtonPluginClick(string service_name)
+	{
+		await ManagerSession.OnSwitchService(service_name, AuthenticationState);
+
+		if (service_name == "__general")
+		{
+			NavigationManager.NavigateTo($"/");
+		}
+		else
+		{
+			NavigationManager.NavigateTo($"/Plugin/{service_name}/Index");
+		}
+	}
+}

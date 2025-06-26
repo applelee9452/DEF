@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>disable</Nullable>
+		<RootNamespace>DEF.CCenter</RootNamespace>
+		<Product>DEF</Product>
+		<Configurations>Debug;Release</Configurations>
+		<OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Folder Include="Model\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Common\DEF.CodeGenerator\DEF.CodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\DEF.Service\DEF.Service.csproj" />
+	</ItemGroup>
+
+</Project>

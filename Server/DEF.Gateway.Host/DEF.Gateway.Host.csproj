@@ -1,0 +1,77 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>disable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>ecfcc04f-651b-4125-8975-027cda0d538b</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<RootNamespace>DEF.Gateway</RootNamespace>
+		<Product>DEF</Product>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<StartupObject>DEF.Gateway.Program</StartupObject>
+		<PlatformTarget>x64</PlatformTarget>
+		<Configurations>Debug;Release</Configurations>
+		<NoWarn>MSB3243;MSB3539;CA2014;CS1998;CS0168;1701;1702;IDE1006</NoWarn>
+		<OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="logs\**" />
+		<Content Remove="logs\**" />
+		<EmbeddedResource Remove="logs\**" />
+		<None Remove="logs\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="Frontend.Grpc\GatewayNotify.proto" GrpcServices="Server" />
+		<PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+		<PackageReference Include="Polly" Version="8.6.1" />
+		<PackageReference Include="Serilog" Version="4.3.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="Serilog.Sinks.MongoDB" Version="7.0.0" />
+		<PackageReference Include="SuperSocket" Version="2.0.1" />
+		<PackageReference Include="SuperSocket.Channel" Version="2.0.0-beta.11" />
+		<PackageReference Include="SuperSocket.Server" Version="2.0.1" />
+		<PackageReference Include="SuperSocket.WebSocket" Version="2.0.1" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Common\DEF.Common.Kcp\Runtime\Kcp.csproj" />
+		<ProjectReference Include="..\DEF.Gateway.Interface\DEF.Gateway.Interface.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Dockerfile">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Frontend.Grpc\GatewayNotify.proto">
+			<GrpcServices>Server</GrpcServices>
+		</None>
+		<None Update="gateway.pfx">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="guaji-testshanghai.cragon.cn.pfx">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="localhost.pfx">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>

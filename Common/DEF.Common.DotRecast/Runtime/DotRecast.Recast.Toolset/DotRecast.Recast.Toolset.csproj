@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <NoWarn>SYSLIB0023;MSB3243;MSB3539;CA2014;CS1998;CS0168;1701;1702;IDE1006</NoWarn>
+    <OutDir>../../../../_Tmp/DEF.Common.DotRecast.Recast.Toolset/bin</OutDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotRecast.Core\DotRecast.Core.csproj" />
+    <ProjectReference Include="..\DotRecast.Recast\DotRecast.Recast.csproj" />
+    <ProjectReference Include="..\DotRecast.Detour\DotRecast.Detour.csproj" />
+    <ProjectReference Include="..\DotRecast.Detour.Crowd\DotRecast.Detour.Crowd.csproj" />
+    <ProjectReference Include="..\DotRecast.Detour.Dynamic\DotRecast.Detour.Dynamic.csproj" />
+    <ProjectReference Include="..\DotRecast.Detour.Extras\DotRecast.Detour.Extras.csproj" />
+    <ProjectReference Include="..\DotRecast.Detour.TileCache\DotRecast.Detour.TileCache.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+		<Compile Remove="obj\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<None Remove="*.meta" />
+		<None Remove="*/*.meta" />
+		<None Remove="*/*/*.meta" />
+		<None Remove="*/*/*/*.meta" />
+		<None Remove="obj\**" />
+	</ItemGroup>
+
+</Project>

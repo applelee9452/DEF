@@ -1,0 +1,74 @@
+﻿@using Microsoft.AspNetCore.Authentication.Cookies
+@using MongoDB.Bson
+@using MongoDB.Driver
+@inject NavigationManager NavigationManager
+@inject ManagerUCenter ManagerUCenter
+@inject ManagerDb ManagerDb
+@inject ToastService ToastService
+
+<p></p>
+<h6>设置</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+    <Card>
+        <BodyTemplate>
+            <BootstrapInput @bind-Value="@AgentUrlPrefix" ShowLabel="true" DisplayText="代理专属链接前缀" />
+            <p />
+            <Button OnClick="@OnClickButtonSave" Color="Color.Primary">保存</Button>
+        </BodyTemplate>
+    </Card>
+</Row>
+<p />
+
+@code
+{
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationState { get; set; }
+    string AgentUrlPrefix { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await ManagerUCenter.Db.ReadAsync<ConfigSettings>(a => a.Id == "Settings", typeof(ConfigSettings).Name);
+        if (settings == null)
+        {
+            settings = new ConfigSettings()
+                {
+                    Id = "Settings",
+                    AgentUrlPrefix = "http://127.0.0.1:5005/download?agent_id="
+                };
+
+            await ManagerUCenter.Db.InsertAsync(typeof(ConfigSettings).Name, settings);
+        }
+
+        AgentUrlPrefix = settings.AgentUrlPrefix;
+    }
+
+    async Task OnClickButtonSave(MouseEventArgs e)
+    {
+        var settings = await ManagerUCenter.Db.ReadAsync<ConfigSettings>(a => a.Id == "Settings", typeof(ConfigSettings).Name);
+        if (settings == null)
+        {
+            settings = new ConfigSettings()
+                {
+                    Id = "Settings",
+                    AgentUrlPrefix = AgentUrlPrefix
+                };
+
+            await ManagerUCenter.Db.InsertAsync(typeof(ConfigSettings).Name, settings);
+        }
+        else
+        {
+            settings.AgentUrlPrefix = AgentUrlPrefix;
+
+            await ManagerUCenter.Db.ReplaceOneData(typeof(ConfigSettings).Name, settings.Id, settings);
+        }
+
+        await ToastService.Show(new ToastOption()
+            {
+                Category = ToastCategory.Success,
+                Title = "成功通知",
+                Content = "修改代理专属链接前缀成功！"
+            });
+    }
+}

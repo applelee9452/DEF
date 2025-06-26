@@ -1,0 +1,29 @@
+﻿@using BootstrapBlazor.Components
+@using Microsoft.AspNetCore.Components
+@using System.Threading
+@implements IDisposable
+
+<p></p>
+<h6>用户活跃报表</h6>
+<p></p>
+
+<Message @ref="MessageElement" />
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+</Row>
+
+<p></p>
+
+@code
+{
+    Message MessageElement { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    void IDisposable.Dispose()
+    {
+    }
+}

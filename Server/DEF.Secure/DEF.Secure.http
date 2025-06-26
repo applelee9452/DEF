@@ -1,0 +1,6 @@
+@DEF.Secure_HostAddress = http://localhost:5287
+
+GET {{DEF.Secure_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

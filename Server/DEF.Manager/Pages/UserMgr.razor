@@ -1,0 +1,130 @@
+﻿@* @page "/usermgr"
+@attribute [Authorize]
+@inject ManagerDb ManagerDb
+@inject ToastService ToastService
+@inject ManagerSession ManagerSession
+
+<Table TItem="User" IsStriped="true" IsBordered="true" IsMultipleSelect="true"
+	   TableSize="TableSize.Compact"
+	   ShowToolbar="true" ShowLoading="true"
+	   OnQueryAsync="OnQueryAsync" OnSaveAsync="OnSaveAsync" OnDeleteAsync="OnDeleteAsync">
+	<TableColumns>
+		<TableColumn @bind-Field="@context.Id" Text="Id" IsVisibleWhenAdd="false" IsVisibleWhenEdit="false" />
+		<TableColumn @bind-Field="@context.UserName" Text="登录账号" IsReadonlyWhenEdit="true" />
+		<TableColumn @bind-Field="@context.DisplayName" Text="显示名称" />
+		<TableColumn @bind-Field="@context.Password" Text="密码" />
+		<TableColumn @bind-Field="@context.Role" Text="账号角色" />
+		<TableColumn @bind-Field="@context.CreateDateTime" Text="创建时间" IsVisibleWhenAdd="false" IsVisibleWhenEdit="false" />
+		<TableColumn @bind-Field="@context.AgentId" Text="代理Id" IsVisibleWhenAdd="false" IsVisibleWhenEdit="false" />
+	</TableColumns>
+</Table>
+
+@code
+{
+	List<SelectedItem> Items { get; } = new()
+	{
+		new("Guest", "游客"),
+		new("Admin", "管理员"),
+		new("Platform", "平台"),
+		new("Agent", "代理")
+	};
+
+	protected override async Task OnInitializedAsync()
+	{
+		await Task.Delay(1);
+	}
+
+	async Task<QueryData<User>> OnQueryAsync(QueryPageOptions options)
+	{
+		var items = await ManagerDb.GetUserList(ManagerSession.User.UserName, options.PageIndex, options.PageItems);
+
+		return new QueryData<User>
+			{
+				Items = items,
+				TotalCount = items.Count,
+				IsAdvanceSearch = true,
+				IsFiltered = true,
+				IsSearch = true,
+				IsSorted = true,
+			};
+	}
+
+	async Task<bool> OnSaveAsync(User user, ItemChangedType item_changed_type)
+	{
+		if (ItemChangedType.Add == item_changed_type && user.Role == RoleType.Agent)
+		{
+			if (ManagerSession.User.AgentParents.Count > 0)
+			{
+				user.AgentParents.AddRange(ManagerSession.User.AgentParents);
+			}
+
+			if (ManagerSession.User.AgentId > 0)
+			{
+				user.AgentParents.Add(ManagerSession.User.AgentId);
+			}
+		}
+
+		if (string.IsNullOrEmpty(user.Password))
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "失败通知",
+					Content = "密码不可以为空！"
+				});
+
+			return false;
+		}
+
+		if (string.IsNullOrEmpty(user.DisplayName))
+		{
+			user.DisplayName = user.UserName;
+		}
+
+		var user2 = await ManagerDb.GetUserByUserName(user.UserName, true);
+
+		if (user2 != null)
+		{
+			if (user2.IsDelete)
+			{
+				// 该用户已标记为删除，不可以被更新
+
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "用户名重复，请修改用户名！"
+					});
+
+				return false;
+			}
+			else
+			{
+				await ManagerDb.UpdateUser(user);
+			}
+		}
+		else
+		{
+			await ManagerDb.CreateUsers([user], ManagerSession.User.AgentId);
+		}
+
+		return true;
+	}
+
+	async Task<bool> OnDeleteAsync(IEnumerable<User> users)
+	{
+		await ManagerDb.DeleteUsers(users.ToList());
+
+		return true;
+	}
+
+	Task<string> RoleDisplayFormatter(object val)
+	{
+		var ret = "";
+		if (val is TableColumnContext<User, object> data && data.Value is string role)
+		{
+			ret = Items.Find(i => i.Value == role)?.Text;
+		}
+		return Task.FromResult(ret);
+	}
+} *@

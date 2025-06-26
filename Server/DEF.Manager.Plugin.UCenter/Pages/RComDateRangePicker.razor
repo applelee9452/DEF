@@ -1,0 +1,95 @@
+﻿<Button Color="@GetColor(ButtonDatePickType.Today)" OnClick="() => BottonClick(ButtonDatePickType.Today)">今日</Button>
+<Button Color="@GetColor(ButtonDatePickType.Yesterday)" OnClick="() => BottonClick(ButtonDatePickType.Yesterday)">昨日</Button>
+<Button Color="@GetColor(ButtonDatePickType.BeforeTesterday)" OnClick="() => BottonClick(ButtonDatePickType.BeforeTesterday)">前日</Button>
+<Button Color="@GetColor(ButtonDatePickType.Week)" OnClick="() => BottonClick(ButtonDatePickType.Week)">过去7天</Button>
+<Button Color="@GetColor(ButtonDatePickType.Month)" OnClick="() => BottonClick(ButtonDatePickType.Month)">过去30天</Button>
+<Button Color="@GetColor(ButtonDatePickType.All)" OnClick="() => BottonClick(ButtonDatePickType.All)">全部</Button>
+<Button IsDisabled="false" Color="@GetColor(ButtonDatePickType.Custom)" OnClick="() => BottonClick(ButtonDatePickType.Custom)">自定义</Button>
+
+<DateTimePicker ViewMode="DatePickerViewMode.DateTime" @bind-Value="@DateRange[0]" OnValueChanged="@TimePickerValueChanged">
+    <TimePickerSetting ShowClockScale="true" IsAutoSwitch="false" />
+</DateTimePicker>
+
+<BootstrapInputGroupLabel DisplayText="至" />
+
+<DateTimePicker ViewMode="DatePickerViewMode.DateTime" @bind-Value="@DateRange[1]" OnValueChanged="@TimePickerValueChanged">
+    <TimePickerSetting ShowClockScale="true" IsAutoSwitch="false" />
+</DateTimePicker>
+
+@code {
+    [Parameter]
+    public EventCallback OnDateRangeSelected { get; set; }
+    DateTime[] DateRange = new DateTime[] { DateTime.Now.Date, DateTime.Now.AddDays(1).Date };
+    ButtonDatePickType SelectBtnType = 0;
+
+    enum ButtonDatePickType
+    {
+        Today,
+        Yesterday,
+        BeforeTesterday,
+        Week,
+        Month,
+        All,
+        Custom
+    }
+
+    private void OnOneDayDiff(int day_diff)
+    {
+        DateTime start_date = DateTime.Now.Date.AddDays(day_diff);
+        DateTime end_date = DateTime.Now.Date.AddDays(day_diff + 1);
+        DateRange = new DateTime[] { start_date, end_date };
+    }
+
+    private void DiffToNow(int day_diff)
+    {
+        DateTime start_date = DateTime.Now.Date.AddDays(day_diff);
+        DateTime end_date = DateTime.Now.Date.AddDays(1);
+        DateRange = new DateTime[] { start_date, end_date };
+    }
+
+    async Task BottonClick(ButtonDatePickType btn_type)
+    {
+        SelectBtnType = btn_type;
+        switch (btn_type)
+        {
+            case ButtonDatePickType.Today:
+                OnOneDayDiff(0);
+                break;
+            case ButtonDatePickType.Yesterday:
+                OnOneDayDiff(-1);
+                break;
+            case ButtonDatePickType.BeforeTesterday:
+                OnOneDayDiff(-2);
+                break;
+            case ButtonDatePickType.Week:
+                DiffToNow(-6);
+                break;
+            case ButtonDatePickType.Month:
+                DiffToNow(-29);
+                break;
+            case ButtonDatePickType.All:
+                DateTime start_date = DateTime.Now.Date.AddDays(-1000);
+                DateTime end_date = DateTime.Now.Date.AddDays(1);
+                DateRange = new DateTime[] { start_date, end_date };
+                break;
+        }
+
+        await OnDateRangeSelected.InvokeAsync();
+    }
+
+    Color GetColor(ButtonDatePickType btn_type)
+    {
+        return btn_type == SelectBtnType ? Color.Success : Color.Secondary;
+    }
+
+    public DateTime[] GetSelectedDateRange()
+    {
+        return DateRange;
+    }
+
+    private async Task TimePickerValueChanged(DateTime dt)
+    {
+        SelectBtnType = ButtonDatePickType.Custom;
+        await OnDateRangeSelected.InvokeAsync();
+    }
+}

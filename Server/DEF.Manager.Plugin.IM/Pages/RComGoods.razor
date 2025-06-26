@@ -1,0 +1,88 @@
+﻿@using System.Text
+@inject ManagerIM ManagerIM
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ToastService ToastService
+
+<Table TItem="CDKeyAttachment" IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+	   TableSize="TableSize.Compact" IsBordered="true" ShowLoading="true"
+	   IsAutoRefresh="true" AutoRefreshInterval="1000"
+	   ShowToolbar="false" ShowAddButton="false" ShowEditButton="true" ShowDeleteButton="true"
+	   ShowExtendButtons="true" ShowExtendDeleteButton="true" OnDeleteAsync="@OnDeleteGoodsAsync"
+	   IsPagination="false" OnQueryAsync="@OnQueryGoodsListAsync">
+	<TableColumns>
+		<TableColumn @bind-Field="@context.ItemId" Text="物品ID" />
+		<TableColumn @bind-Field="@context.ItemCount" Text="物品数量" />
+	</TableColumns>
+</Table>
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<BootstrapInput PlaceHolder="请输入物品ID..." TValue="int" ShowLabel="true" @bind-Value="@InputGoodsId" />
+	<BootstrapInput PlaceHolder="请输入物品数量..." TValue="int" ShowLabel="true" @bind-Value="@InputGoodsNum" />
+	<Button Color="Color.Secondary" Text="添加" OnClick="@OnButtonAddGoodsClick" />
+</Row>
+
+@code
+{
+	public int InputGoodsId = 0;
+	public int InputGoodsNum = 0;
+	public List<CDKeyAttachment> AttachmentList = [];
+
+	Task<bool> OnDeleteGoodsAsync(IEnumerable<CDKeyAttachment> attachment_list)
+	{
+		foreach (var item in attachment_list)
+		{
+			AttachmentList.Remove(item);
+		}
+
+		return Task.FromResult(false);
+	}
+
+	Task<QueryData<CDKeyAttachment>> OnQueryGoodsListAsync(QueryPageOptions options)
+	{
+		IEnumerable<CDKeyAttachment> items = AttachmentList;
+
+		var total = items.Count();
+
+		var querys = new QueryData<CDKeyAttachment>()
+			{
+				Items = items,
+				TotalCount = total,
+				IsSorted = true,
+				IsFiltered = true,
+				IsSearch = true
+			};
+
+		return Task.FromResult(querys);
+	}
+
+	async Task OnButtonAddGoodsClick()
+	{
+		CDKeyAttachment attachment = new();
+		attachment.ItemId = InputGoodsId;
+		attachment.ItemCount = InputGoodsNum;
+
+		if (InputGoodsNum <= 0)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "物品数量",
+					Content = "请输入物品数量"
+				});
+			return;
+		}
+
+		if (InputGoodsId <= 0)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "错误的物品ID",
+					Content = "错误的物品ID"
+				});
+			return;
+		}
+
+		AttachmentList.Add(attachment);
+	}
+}

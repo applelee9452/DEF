@@ -1,0 +1,24 @@
+{
+    "name": "DEF.IM.Impl",
+    "rootNamespace": "DEF",
+    "references": [
+        "Unity.TextMeshPro",
+        "VContainer",
+        "YooAsset",
+        "MemoryPack.Unity",
+        "DEF.Unity.Mongo",
+        "DEF.Unity.protobuf-net",
+        "DEF.Unity.LitJson",
+        "DEF.Core",
+        "DEF.IM.Interface"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

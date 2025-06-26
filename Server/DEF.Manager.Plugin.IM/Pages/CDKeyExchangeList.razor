@@ -1,0 +1,91 @@
+﻿@using System.Text
+@using MongoDB.Bson
+@using MongoDB.Driver
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ManagerIM ManagerIM
+@inject ToastService ToastService
+@inject DialogService DialogService
+
+<p></p>
+<h6>CDKey兑换列表</h6>
+<p></p>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="EvExchangeCDKeyView" Items="@ListCDKeyExchange" IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+		   UseComponentWidth="false" AllowResizing="false" IsBordered="true" ShowLoading="true" ShowExportButton="true">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.CDKeyGuid" Text="CDKeyGuid" />
+			<TableColumn @bind-Field="@context.RegionGuid" Text="分区Guid" />
+			<TableColumn @bind-Field="@context.CDKey" Text="CDKey" />
+			<TableColumn @bind-Field="@context.RegionName" Text="分区名" />
+			<TableColumn @bind-Field="@context.PlayerGuid" Text="玩家Guid" />
+			<TableColumn @bind-Field="@context.PlayerNickName" Text="玩家昵称" />
+			<TableColumn @bind-Field="@context.EventTm" Text="兑换时间">
+				<Template Context="v">
+					<div>@v.Row.EventTm.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+		</TableColumns>
+	</Table>
+	<Pagination ShowPaginationInfo="true" PageItems="@PageSize" PageCount="@PageTotalCount" PageIndex="@PageIndex" OnPageLinkClick="@OnPageLinkClick"></Pagination>
+</Row>
+
+<p></p>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	List<EvExchangeCDKeyView> ListCDKeyExchange { get; set; } = [];
+	int PageIndex { get; set; } = 1;
+	int PageSize { get; set; } = 50;
+	int PageTotalCount { get; set; }
+
+	const string DbCollectionDataEvExchangeCDKey = "EvExchangeCDKey";
+
+	protected override async Task OnInitializedAsync()
+	{
+		await QueryData();
+	}
+
+	async Task QueryData()
+	{
+		var collection = ManagerIM.Db.Database.GetCollection<EvExchangeCDKey>(DbCollectionDataEvExchangeCDKey);
+
+		FilterDefinition<EvExchangeCDKey> filter = Builders<EvExchangeCDKey>.Filter.Empty;
+
+		int total_count = (int)await collection.Find(filter).CountDocumentsAsync();
+		PageTotalCount = (int)Math.Ceiling(total_count / (float)PageSize);
+
+		if (PageIndex > PageTotalCount)
+		{
+			PageIndex = PageTotalCount;
+		}
+
+		if (PageIndex < 1)
+		{
+			PageIndex = 1;
+		}
+
+		var list_cdkey_exchange = await collection.Find(filter).SortByDescending(x => x.EventTm).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+		ListCDKeyExchange.Clear();
+		if (list_cdkey_exchange != null)
+		{
+			foreach (var i in list_cdkey_exchange)
+			{
+				EvExchangeCDKeyView view = new(i);
+				ListCDKeyExchange.Add(view);
+			}
+		}
+
+		StateHasChanged();
+	}
+
+	async Task OnPageLinkClick(int page_index)
+	{
+		PageIndex = page_index;
+
+		await QueryData();
+	}
+}

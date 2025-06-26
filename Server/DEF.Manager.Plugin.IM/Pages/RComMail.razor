@@ -1,0 +1,32 @@
+﻿@using System.Text
+@inject ManagerIM ManagerIM
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ToastService ToastService
+
+<Row ItemsPerRow="ItemsPerRow.Three">
+	<BootstrapInput PlaceHolder="请输入邮件标题..." @bind-Value="@MailTitle" @bind-Value:event="OnChange" ShowLabel="true" DisplayText="邮件标题" />
+</Row>
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Textarea placeholder="请输入邮件内容..." rows="5" @bind-Value="@MailDesc" @bind-Value:event="OnChange" DisplayText="邮件内容" />
+</Row>
+
+@code
+{
+	public string MailTitle { get; set; } = "";
+	public string MailDesc { get; set; } = "";
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+	}
+
+	public async Task OnChange()
+	{
+		await ToastService.Show(new ToastOption()
+			{
+				Category = ToastCategory.Error,
+				Title = "保存失败",
+				Content = "可能 CDKey 重复了"
+			});
+	}
+}

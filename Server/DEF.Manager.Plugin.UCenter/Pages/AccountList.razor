@@ -1,0 +1,300 @@
+﻿@using MongoDB.Bson
+@using MongoDB.Driver
+@inject ManagerUCenter ManagerUCenter
+@inject ManagerDb ManagerDb
+@inject ToastService ToastService
+@inject DialogService DialogService
+
+<p></p>
+<h6>用户列表</h6>
+<p></p>
+
+<Block Roles="@Roles">
+	<Row ItemsPerRow="ItemsPerRow.Twelve">
+		<Button IsBlock="true" Color="Color.Primary" Size="Size.Medium" Text="修改用户" OnClick="@OnClickButtonEdit" />
+	</Row>
+	<p></p>
+</Block>
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Table TItem="DataAccountView" Items="@ListAccountView"
+		   OnSaveAsync="@OnSaveAsync"
+		   TableSize="TableSize.Compact"
+		   ShowEditButton="true"
+		   IsStriped="true"
+		   IsMultipleSelect="false"
+		   ClickToSelect="true"
+		   IsBordered="true"
+		   ShowLoading="true">
+		<TableColumns>
+			<TableColumn @bind-Field="@context.Id" Text="Id" />
+			<TableColumn @bind-Field="@context.AccountType" Text="账号类型" />
+			<TableColumn @bind-Field="@context.AccountStatus" Text="账号状态" />
+			<TableColumn @bind-Field="@context.AccountName" Text="账号名" />
+			<TableColumn @bind-Field="@context.PhoneNumber" Text="手机号" />
+			<TableColumn @bind-Field="@context.Email" Text="邮箱" />
+			<TableColumn @bind-Field="@context.AgentId" Text="代理Id" />
+			<TableColumn @bind-Field="@context.AgentUserName" Text="代理名" />
+			<TableColumn @bind-Field="@context.Name" Text="姓名" />
+			<TableColumn @bind-Field="@context.Gender" Text="性别" />
+			<TableColumn @bind-Field="@context.Identity" Text="身份证" />
+			<TableColumn @bind-Field="@context.ProfileImage" Text="头像" />
+			<TableColumn @bind-Field="@context.ProfileThumbnail" Text="头像缩略图" />
+			<TableColumn @bind-Field="@context.LastLoginDateTime" Text="最新登陆时间" />
+			<TableColumn @bind-Field="@context.LastLoginClientIp" Text="最新登陆Ip" />
+			<TableColumn @bind-Field="@context.LastLoginDeviceId" Text="最新登陆设备" />
+			<TableColumn @bind-Field="@context.CreatedTime" Text="创建时间">
+				<Template Context="v">
+					<div>@v.Row.CreatedTime.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+			<TableColumn @bind-Field="@context.UpdatedTime" Text="更新时间">
+				<Template Context="v">
+					<div>@v.Row.UpdatedTime.ToLocalTime()</div>
+				</Template>
+			</TableColumn>
+		</TableColumns>
+	</Table>
+	<Pagination ShowPaginationInfo="true" PageItems="@PageSize" PageCount="@PageTotalCount" PageIndex="@PageIndex" OnPageLinkClick="@OnPageLinkClick"></Pagination>
+</Row>
+
+@code
+{
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+	List<string> Roles { get; set; } = new() { "Admin" };
+	List<DataAccountView> ListAccountView { get; set; } = new();
+	int PageIndex { get; set; } = 1;
+	int PageSize { get; set; } = 50;
+	int PageTotalCount { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await QueryData();
+	}
+
+	async Task QueryData()
+	{
+		var collection = ManagerUCenter.Db.Database.GetCollection<DataAccount>(StringDef.DbCollectionDataAccount);
+
+		var state = await AuthenticationState;
+		if (!state.User.Identity!.IsAuthenticated)
+		{
+			return;
+		}
+
+		// 通过登录用户初始化上下文
+		var user_name = state.User.Identity!.Name!;
+		var user = await ManagerDb.GetUserByUserName(user_name, false);
+
+		if (user == null)
+		{
+			return;
+		}
+
+		// 当前登录用户的代理Id
+		ulong agent_id = user.AgentId;
+
+		switch (user.Role)
+		{
+			case RoleType.Guest:
+				{
+					ListAccountView.Clear();
+				}
+				break;
+			case RoleType.Agent:
+				{
+					FilterDefinition<DataAccount> filter = Builders<DataAccount>.Filter.ElemMatch(i => i.AgentParents, item => item == agent_id);
+
+					int total_count = (int)await collection.Find(filter).CountDocumentsAsync();
+					PageTotalCount = (int)Math.Ceiling(total_count / (float)PageSize);
+
+					if (PageIndex > PageTotalCount)
+					{
+						PageIndex = PageTotalCount;
+					}
+
+					if (PageIndex < 1)
+					{
+						PageIndex = 1;
+					}
+
+					var list_account = await collection.Find(filter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+					ListAccountView.Clear();
+					if (list_account != null && list_account.Count > 0)
+					{
+						var collection_agent = ManagerUCenter.Db.Database.GetCollection<DataAgent>(StringDef.DbCollectionDataAgent);
+
+						foreach (var i in list_account)
+						{
+							DataAccountView view = new()
+								{
+									AgentUserName = string.Empty
+								};
+
+							view.Init(i);
+
+							if (i.AgentId > 0)
+							{
+								FilterDefinition<DataAgent> filter_agent = Builders<DataAgent>.Filter.Eq(i => i.AgentId, i.AgentId);
+								var agent = await collection_agent.Find(filter_agent).FirstOrDefaultAsync();
+								if (agent != null)
+								{
+									view.AgentUserName = agent.UserName;
+								}
+							}
+							ListAccountView.Add(view);
+						}
+					}
+				}
+				break;
+			case RoleType.Platform:
+			case RoleType.Admin:
+				{
+					FilterDefinition<DataAccount> filter = Builders<DataAccount>.Filter.Empty;
+
+					// if (string.IsNullOrEmpty(SelectedAccountGuid))
+					// {
+					// 	filter = Builders<DataAccount>.Filter.Empty;
+					// }
+					// else
+					// {
+					// 	filter = Builders<DataAccount>.Filter.Eq("_id", SelectedAccountGuid);
+					// }
+
+					int total_count = (int)await collection.Find(filter).CountDocumentsAsync();
+					PageTotalCount = (int)Math.Ceiling(total_count / (float)PageSize);
+
+					if (PageIndex > PageTotalCount)
+					{
+						PageIndex = PageTotalCount;
+					}
+
+					if (PageIndex < 1)
+					{
+						PageIndex = 1;
+					}
+
+					var list_account = await collection.Find(filter).Skip(PageSize * (PageIndex - 1)).Limit(PageSize).ToListAsync();
+
+					ListAccountView.Clear();
+					if (list_account != null && list_account.Count > 0)
+					{
+						var collection_agent = ManagerUCenter.Db.Database.GetCollection<DataAgent>(StringDef.DbCollectionDataAgent);
+
+						foreach (var i in list_account)
+						{
+							DataAccountView view = new()
+								{
+									AgentUserName = string.Empty
+								};
+
+							view.Init(i);
+
+							if (i.AgentId > 0)
+							{
+								FilterDefinition<DataAgent> filter_agent = Builders<DataAgent>.Filter.Eq(e => e.AgentId, i.AgentId);
+								var agent = await collection_agent.Find(filter_agent).FirstOrDefaultAsync();
+								if (agent != null)
+								{
+									view.AgentUserName = agent.UserName;
+								}
+							}
+
+							ListAccountView.Add(view);
+						}
+					}
+				}
+				break;
+		}
+
+		StateHasChanged();
+	}
+
+	async Task OnPageLinkClick(int page_index)
+	{
+		PageIndex = page_index;
+
+		await QueryData();
+	}
+
+	async Task<bool> OnSaveAsync(DataAccountView item, ItemChangedType change_type)
+	{
+		// var collection = ManagerUCenter.Db.Database.GetCollection<DataAccount>(StringDef.DbCollectionDataAccount);
+
+		// FilterDefinition<DataAccount> filter = null;
+		// filter = Builders<DataAccount>.Filter.Eq("_id", item.Id);
+
+		// var update = Builders<DataAccount>.Update
+		// 	.Set(x => x.AccountStatus, item.AccountStatus);
+
+		// UpdateOptions update_options = new() { IsUpsert = true };
+
+		// var update_result = await collection.UpdateOneAsync(filter, update, update_options);
+
+		// return update_result.ModifiedCount > 0;
+
+		await Task.Delay(1);
+
+		return false;
+	}
+
+	// 点击按钮，编辑玩家
+	async Task OnClickButtonEdit(MouseEventArgs args)
+	{
+		DataAccount data_account_item = new()
+		{
+		};
+
+		await DialogService.ShowSaveDialog<AccountDlgEdit>("修改玩家",
+		async () =>
+		{
+			var collection = ManagerUCenter.Db.Database.GetCollection<DataAccount>(StringDef.DbCollectionDataAccount);
+
+			FilterDefinition<DataAccount> filter = null;
+			filter = Builders<DataAccount>.Filter.Eq("_id", data_account_item.Id);
+
+			var update = Builders<DataAccount>.Update
+				.Set(x => x.AccountStatus, data_account_item.AccountStatus);
+
+			UpdateOptions update_options = new() { IsUpsert = true };
+
+			var update_result = await collection.UpdateOneAsync(filter, update, update_options);
+
+			if (update_result.ModifiedCount > 0)
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Success,
+						Title = "成功通知",
+						Content = "修改玩家成功！"
+					});
+			}
+			else
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Success,
+						Title = "失败通知",
+						Content = "没有任何玩家被修改！"
+					});
+			}
+
+			StateHasChanged();
+
+			await QueryData();
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["Value"] = data_account_item;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Large;
+			op.SaveButtonText = "修改";
+		});
+	}
+}

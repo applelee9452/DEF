@@ -1,0 +1,49 @@
+﻿@page "/Plugin/{PluginName}/{PluginComponentName}"
+@inject NavigationManager NavigationManager
+@inject ManagerContext ManagerContext
+@inject ManagerSession ManagerSession
+
+<div>
+	@ChildContent
+</div>
+
+@code {
+	[CascadingParameter]
+	Task<AuthenticationState> AuthenticationState { get; set; }
+
+	[Parameter]
+	public RenderFragment ChildContent { get; set; }
+
+	[Parameter]
+	public string PluginName { get; set; }
+
+	[Parameter]
+	public string PluginComponentName { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		await ManagerSession.OnSwitchService(PluginName, AuthenticationState);
+	}
+
+	protected override void OnParametersSet()
+	{
+		base.OnParametersSet();
+
+		if (!string.IsNullOrEmpty(ManagerSession.CurrentServiceName))
+		{
+			var plugin = ManagerContext.GetPluginInfo(ManagerSession.CurrentServiceName);
+			if (plugin == null)
+			{
+				return;
+			}
+
+			var component_type = plugin.AssemblyPlugin.ExportedTypes.FirstOrDefault(i => i.Name == PluginComponentName);
+			if (component_type != null)
+			{
+				ChildContent = BootstrapDynamicComponent.CreateComponent(component_type).Render();
+			}
+		}
+	}
+}

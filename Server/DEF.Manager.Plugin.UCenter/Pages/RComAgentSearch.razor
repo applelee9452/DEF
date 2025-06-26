@@ -1,0 +1,47 @@
+﻿@inject ManagerUCenter ManagerUCenter
+
+<BootstrapInputGroup>
+    <BootstrapInput PlaceHolder="请输入代理名" @bind-Value="@InputStr" @oninput="HandleInputChange" />
+    <Checkbox TValue="bool" DisplayText="只看直属" ShowAfterLabel="true" Color="Color.Success" @bind-Value="@IsDirectAgent" OnValueChanged="@IsDirectAgentChanged" />
+    <Button IsOutline="true" @onclick="Search">查询代理</Button>
+    <BootstrapInputGroupLabel Width="250" DisplayText="@($"{ShowOutput()}")" />
+</BootstrapInputGroup>
+
+@code {
+    [Parameter]
+    public EventCallback OnAgentSearch { get; set; }
+    string InputStr { get; set; }
+    public bool IsDirectAgent { get; set; } = true;
+    public DataAgentView DataAgentView { get; set; }
+
+    async Task Search()
+    {
+        if (string.IsNullOrEmpty(InputStr))
+            return;
+        DataAgentView = await ManagerUCenter.GetDataAgentViewByName(InputStr);
+        await OnAgentSearch.InvokeAsync();
+    }
+
+    void HandleInputChange(ChangeEventArgs e)
+    {
+        var new_value = e.Value.ToString();
+        if (string.IsNullOrEmpty(new_value))
+            DataAgentView = null;
+    }
+
+    private async Task IsDirectAgentChanged(bool t)
+    {
+        await Search();
+    }
+
+    string ShowOutput()
+    {
+        if (string.IsNullOrEmpty(DataAgentView?.UserName))
+            return "";
+        if (IsDirectAgent || DataAgentView.AgentParents?.Length >=2)
+        {
+            return $"[{DataAgentView?.UserName}]";
+        }
+        return $"[{DataAgentView?.UserName}]+子代理";
+    }
+}

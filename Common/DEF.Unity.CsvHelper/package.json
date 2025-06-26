@@ -1,0 +1,18 @@
+{
+  "name": "com.cragon.defunitycsvhelper",
+  "displayName": "DEF.Unity.CsvHelper",
+  "category": "DEF",
+  "description": "DEF",
+  "version": "1.0.0",
+  "unity": "2022.3",
+  "keywords": [
+    "DEF"
+  ],
+  "author": {
+    "name": "li.yong",
+    "email": "xiaolige945@vip.qq.com",
+    "url": ""
+  },
+  "dependencies": {
+  }
+}

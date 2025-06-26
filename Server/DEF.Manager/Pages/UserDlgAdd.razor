@@ -1,0 +1,58 @@
+﻿<div class="row form-inline">
+	<div class="col-12">
+		<BootstrapInput @bind-Value="User.UserName" ShowLabel="true" DisplayText="用户名" />
+	</div>
+</div>
+<p></p>
+
+<div class="row form-inline">
+	<div class="col-12">
+		<BootstrapInput @bind-Value="User.DisplayName" ShowLabel="true" DisplayText="显示名称" />
+	</div>
+</div>
+<p></p>
+
+<div class="row form-inline">
+	<div class="col-12">
+		<BootstrapInput @bind-Value="User.Password" ShowLabel="true" DisplayText="密码" />
+	</div>
+</div>
+<p></p>
+
+<div class="row form-inline">
+	<div class="col-12">
+		<RadioList TValue="string" Items="@ListRole" OnSelectedChanged="@OnSelectedChanged" IsVertical="true" ShowLabel="true" DisplayText="选择角色" />
+	</div>
+</div>
+<p></p>
+
+@code
+{
+	[Parameter]
+	public User User { get; set; }
+	[Parameter]
+	public List<SelectedItem> ListRole { get; set; }
+
+	protected override Task OnInitializedAsync()
+	{
+		var current_role = User.Role.ToString();
+
+		foreach (var i in ListRole)
+		{
+			if (i.Value == current_role)
+			{
+				i.Active = true;
+				break;
+			}
+		}
+
+		return Task.CompletedTask;
+	}
+
+	Task OnSelectedChanged(IEnumerable<SelectedItem> list, string item)
+	{
+		User.Role = (RoleType)Enum.Parse(typeof(RoleType), item);
+
+		return Task.CompletedTask;
+	}
+}

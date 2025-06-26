@@ -1,0 +1,26 @@
+﻿@page "/Login"
+@layout LoginLayout
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <Card class="shadow-lg border-0 my-5">
+                <BodyTemplate>
+                    <div class="login-item login-item-gitee">
+                        <div class="login-header">
+                            <span>登录</span>
+                        </div>
+                        <ValidateForm Model="_model" OnValidSubmit="OnLogin">
+                            <BootstrapInput ShowLabel="false" PlaceHolder="请输入账号" @bind-Value="_model.UserName" />
+                            <BootstrapPassword ShowLabel="false" PlaceHolder="请输入密码" @bind-Value="_model.Password" />
+                            <div class="login-sms">
+                                <Checkbox ShowLabel="false" ShowAfterLabel="true" DisplayText="记住我" @bind-Value="_model.RememberMe" />
+                            </div>
+                            <Button Text="登录" Color="Color.Primary" class="btn-login" ButtonType="ButtonType.Submit"></Button>
+                        </ValidateForm>
+                    </div>
+                </BodyTemplate>
+            </Card>
+        </div>
+    </div>
+</div> 

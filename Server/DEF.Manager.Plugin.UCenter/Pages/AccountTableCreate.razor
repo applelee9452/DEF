@@ -1,0 +1,287 @@
+﻿@using MongoDB.Bson
+@using MongoDB.Driver
+@using System.Linq.Expressions
+@using System.Collections
+@inject ManagerUCenter ManagerUCenter
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<p></p>
+<h6>用户新增报表</h6>
+<p></p>
+<div class="row mb-3">
+	<div class="col-2">
+		<DateTimeRange OnConfirm="OnNormalConfirm" ShowSidebar="true" ViewMode="DatePickerViewMode.Date" IsEditable="true"
+					   DateFormat="yyyy/MM/dd" MaxValue="DateTime.Today" ShowToday="true" Value="RangeValue">
+			<TimePickerSetting ShowClockScale="false" IsAutoSwitch="false" />
+		</DateTimeRange>
+	</div>
+	<div class="col-3">
+		<button class="btn btn-primary" @onclick="TodayClick">今日</button>
+		<button class="btn btn-primary" @onclick="YesterdayClick">昨日</button>
+		<button class="btn btn-primary" @onclick="LastWeekClick">过去7天</button>
+		<button class="btn btn-primary" @onclick="LastMonthClick">过去一月</button>
+	</div>
+	<div class="col-4">
+		<button class="btn btn-primary" @onclick="HourClick">按时统计</button>
+		<button class="btn btn-primary" @onclick="DayClick">按日统计</button>
+		<button class="btn btn-primary" @onclick="WeekClick">按周统计</button>
+		<button class="btn btn-primary" @onclick="MonthClick">按月统计</button>
+		<Block Roles="Roles">
+			<button class="btn btn-primary" @onclick="FlashClick">刷新</button>
+		</Block>
+	</div>
+</div>
+
+<Chart ChartType="ChartType.Bar"
+	   OnInitAsync="() => OnInit()"
+	   OnAfterInitAsync="@OnAfterInit"
+	   OnAfterUpdateAsync="@OnAfterUpdate"
+	   OnClickDataAsync="OnClickDataAsync"
+	   @ref="BarChart" />
+
+@code
+{
+	public struct GroupChannel
+	{
+		public DateTime date;
+		public string channel;
+	}
+
+	const string KEY_RANGE = $"CreatePlayer.Range";
+	const string KEY_SPLIT = $"CreatePlayer.Split";
+	DateTimeRangeValue RangeValue { get; set; } = DateTimeUtility.DefaultRangeValue;
+	DateTimeUtility.SplitType SplitType { get; set; } = DateTimeUtility.SplitType.Day;
+	bool Stacked { get; set; } = false;
+	Chart BarChart { get; set; }
+	List<string> Roles { get; set; } = ["Admin"];
+
+	protected override void OnAfterRender(bool first_render)
+	{
+		base.OnAfterRender(first_render);
+	}
+
+	Task OnAfterInit()
+	{
+		return Task.CompletedTask;
+	}
+
+	Task OnAfterUpdate(ChartAction action)
+	{
+		return InvokeAsync(() => { });
+	}
+
+	Task OnClickDataAsync((int dataset_index, int index) v)
+	{
+		return Task.CompletedTask;
+	}
+
+	async Task LoadFromStorge()
+	{
+		var va = await LocalStorage.GetItemAsync<DateTimeRangeValue>(KEY_RANGE);
+		if (va != null)
+		{
+			RangeValue = va;
+		}
+		SplitType = await LocalStorage.GetItemAsync<DateTimeUtility.SplitType>(KEY_SPLIT);
+	}
+
+	async Task<ChartDataSource> OnInit()
+	{
+		await LoadFromStorge();
+
+		var ds = new ChartDataSource();
+
+		ds.Options.X.Title = "日期";
+		ds.Options.Y.Title = "新增玩家数量";
+		ds.Options.Y.Stacked = true;
+		// ds.Options.Y2.Title = "渠道人数";
+		// ds.Options.Y2.PositionLeft = false;
+		// ds.Options.Y2.Stacked = true;
+		ds.Options.ShowXScales = true;
+		ds.Options.ShowXLine = true;
+		ds.Options.ShowYScales = true;
+		ds.Options.ShowYLine = true;
+		ds.Options.ShowDataLabel = true;
+
+		//List<string> days = new List<string>();
+		var segs = DateTimeUtility.GetSegmentation(RangeValue.Start, RangeValue.End, SplitType);
+
+		ds.Labels = await segs.GetLabelsAsync();
+
+		await CreateDataSet(ds, segs);
+
+		StateHasChanged();
+
+		return ds;
+	}
+
+	async Task CreateDataSet(ChartDataSource ds, DateTimeUtility.SegmentationList segs)
+	{
+		try
+		{
+			await Task.Delay(1);
+
+			var collection = ManagerUCenter.Db.GetCollection<EvAccountLoginLogout>(typeof(EvAccountLoginLogout).Name);
+
+			var filter = Builders<EvAccountLoginLogout>.Filter.And(
+						Builders<EvAccountLoginLogout>.Filter.Gte(t => t.Dt, segs.StartUtc),
+						Builders<EvAccountLoginLogout>.Filter.Lt(t => t.Dt, segs.EndUtc)
+			);
+
+			// var aggregate = collection.Aggregate();
+
+			// var query = aggregate.Match(filter).Group(t => new { date = t.EventTmID, channel = t.ChannelId }, g => new
+			// {
+			//     date = g.FirstOrDefault().Dt,
+			//     channel = g.Key.channel,
+			//     count = g.Count(),
+			// });
+
+			// var res = await query.ToListAsync();
+
+			// res.Sort((x, y) => x.channel.CompareTo(y.channel));
+
+			// var channels = res.Select(t => t.channel).Distinct();
+
+			// Dictionary<string, int[]> dic = new Dictionary<string, int[]>();
+			// foreach (var c in channels)
+			// {
+			//     dic[c] = new int[segs.Count];
+			// }
+
+			// await segs.Foreach((seg, i) =>
+			// {
+			//     var d = res.FindAll(t => seg.IsInRange(t.date));
+
+			//     foreach (var c in d)
+			//     {
+			//         dic[c.channel][i] += c.count;
+			//     }
+			//     return Task.CompletedTask;
+			// });
+
+			// foreach (var kv in dic)
+			// {
+			//     ds.Data.Add(new ChartDataset() { Label = kv.Key, Data = kv.Value.Select(i => (object)i) });
+			// }
+
+			// var bucket = aggregate.Bucket(t => t.EventTm,
+			//    segs.BucketsDates,
+			//    g => new
+			//    {
+			//        time = g.FirstOrDefault().EventTm,
+			//        playerCount = g.Count(),
+			//        // channel = g.Select(t => t.ChannelId),
+			//    });
+			// var bucketResults = await bucket.ToListAsync();
+
+			// List<object> ls = new();
+			// await segs.Foreach((seg, i) =>
+			// {
+			//     var res = bucketResults.Find(e => seg.IsInRange(e.time));
+			//     ls.Add(res != null ? res.playerCount : 0);
+			//     return Task.CompletedTask;
+			// });
+			// ds.Data.Add(new ChartDataset() { Label = "总数", Data = ls });
+			// for (int i=0;i<segs.Count;++i)
+			// {
+			//     var seg = segs[i];
+			//     int count = 0;
+			//     for (int j = 0; j < collection.Count; ++j)
+			//     {
+			//         var ev = collection[j];
+			//         if (ev.IsBot)
+			//         {
+			//             continue;
+			//         }
+			//         DateTime dt = ev.EventTm;
+			//         if (seg.IsInRange(dt))
+			//         {
+			//             ++count;
+			//         }
+			//     }
+			//     ls.Add(count);
+			// }
+			// ds.Data.Add(new ChartDataset() { Label = label, Data = ls,IsAxisY2=true });
+		}
+		catch (Exception)
+		{
+			//Logger.Log($"Error={e.Message}");
+		}
+	}
+
+	async void HourClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeUtility.SplitType>(KEY_SPLIT, DateTimeUtility.SplitType.Hour);
+
+		await BarChart.Reload();
+	}
+
+	async void DayClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeUtility.SplitType>(KEY_SPLIT, DateTimeUtility.SplitType.Day);
+
+		await BarChart.Reload();
+	}
+
+	async void WeekClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeUtility.SplitType>(KEY_SPLIT, DateTimeUtility.SplitType.Week);
+
+		await BarChart.Reload();
+	}
+
+	async void MonthClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeUtility.SplitType>(KEY_SPLIT, DateTimeUtility.SplitType.Month);
+
+		await BarChart.Reload();
+	}
+
+	async void TodayClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeRangeValue>(KEY_RANGE, DateTimeUtility.Today());
+
+		await BarChart.Reload();
+	}
+
+	async void YesterdayClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeRangeValue>(KEY_RANGE, DateTimeUtility.Yesterday());
+
+		await BarChart.Reload();
+	}
+
+	async void LastWeekClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeRangeValue>(KEY_RANGE, DateTimeUtility.LastWeek());
+
+		await BarChart.Reload();
+	}
+
+	async void LastMonthClick()
+	{
+		await LocalStorage.SetItemAsync<DateTimeRangeValue>(KEY_RANGE, DateTimeUtility.LastMonth());
+
+		await BarChart.Reload();
+	}
+
+	async Task OnNormalConfirm(DateTimeRangeValue range)
+	{
+		await LocalStorage.SetItemAsync<DateTimeRangeValue>(KEY_RANGE, DateTimeUtility.Format(range));
+
+		await BarChart.Reload();
+	}
+
+	void StackedClick()
+	{
+		Stacked = !Stacked;
+
+		BarChart.Reload();
+	}
+
+	async void FlashClick()
+	{
+		await BarChart.Reload();
+	}
+}

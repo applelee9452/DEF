@@ -1,0 +1,259 @@
+﻿@page "/userlist"
+@attribute [Authorize]
+@inject ManagerDb ManagerDb
+@inject ManagerSession ManagerSession
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<Row ItemsPerRow="ItemsPerRow.One">
+	<Card IsShadow="true">
+		<BodyTemplate>
+			<Row ItemsPerRow="ItemsPerRow.Twelve">
+				<Button Color="Color.Secondary" Text="添加" OnClick="@OnButtonAddClick" />
+			</Row>
+			<p></p>
+			<Row ItemsPerRow="ItemsPerRow.One">
+				<Table TItem="User" Items="@ListUser"
+					   IsStriped="true" IsMultipleSelect="false" ClickToSelect="false"
+					   TableSize="TableSize.Compact" AllowResizing="false" IsBordered="true"
+					   ShowExtendButtons="false"
+					   FixedExtendButtonsColumn="true"
+					   ShowLoading="true">
+					<TableColumns>
+						<TableColumn @bind-Field="@context.UserName" Fixed="true" />
+						<TableColumn @bind-Field="@context.Role" Fixed="true" />
+					</TableColumns>
+				</Table>
+			</Row>
+		</BodyTemplate>
+	</Card>
+</Row>
+
+@code
+{
+	List<User> ListUser { get; set; } = [];
+	User CurrentUser { get; set; }
+
+	// 初始化
+	protected override async Task OnInitializedAsync()
+	{
+		string user_name = ManagerSession.User.UserName;
+		CurrentUser = await ManagerDb.GetUserByUserName(user_name, false);
+
+		await QueryData();
+	}
+
+	// 查询所有用户数据，刷新用户列表
+	async Task QueryData()
+	{
+		// 根据当前用户角色读取可见用户列表
+		var list_user = new List<User>();
+
+		if (CurrentUser.Role == RoleType.Admin)
+		{
+			list_user = await ManagerDb.Db.ReadListAsync<User>(f => !f.IsDelete, ManagerDb.CollectionUser);
+		}
+		else if (CurrentUser.Role == RoleType.Platform)
+		{
+			list_user = await ManagerDb.Db.ReadListAsync<User>(f => f.Role < RoleType.Admin && !f.IsDelete, ManagerDb.CollectionUser);
+		}
+		else
+		{
+			list_user = await ManagerDb.Db.ReadListAsync<User>(f => f.Role == RoleType.Agent && !f.IsDelete && f.AgentParents.Contains(CurrentUser.AgentId), ManagerDb.CollectionUser);
+		}
+
+		ListUser.Clear();
+		if (list_user != null)
+		{
+			ListUser.AddRange(list_user);
+		}
+
+		StateHasChanged();
+	}
+
+	// 点击按钮，添加新用户
+	async Task OnButtonAddClick()
+	{
+		User add_user = new()
+			{
+				Role = RoleType.Agent,
+			};
+
+		List<SelectedItem> list_role = [];
+		switch (CurrentUser.Role)
+		{
+			case RoleType.Guest:
+				break;
+			case RoleType.Agent:
+				list_role.Add(new("Agent", "代理"));
+				break;
+			case RoleType.Platform:
+				list_role.Add(new("Agent", "代理"));
+				break;
+			case RoleType.Admin:
+				list_role.Add(new("Agent", "代理"));
+				list_role.Add(new("Platform", "平台"));
+				break;
+		}
+
+		await DialogService.ShowSaveDialog<UserDlgAdd>("添加新用户",
+		async () =>
+		{
+			if (add_user.Role == RoleType.Agent)
+			{
+				if (ManagerSession.User.AgentParents.Count > 0)
+				{
+					add_user.AgentParents.AddRange(ManagerSession.User.AgentParents);
+				}
+
+				if (ManagerSession.User.AgentId > 0)
+				{
+					add_user.AgentParents.Add(ManagerSession.User.AgentId);
+				}
+			}
+
+			if (string.IsNullOrEmpty(add_user.Password))
+			{
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "密码不可以为空！"
+					});
+
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(add_user.DisplayName))
+			{
+				add_user.DisplayName = add_user.UserName;
+			}
+
+			var user2 = await ManagerDb.GetUserByUserName(add_user.UserName, true);
+
+			if (user2 != null)
+			{
+				if (user2.IsDelete)
+				{
+					// 该用户已标记为删除，不可以被更新
+
+					await ToastService.Show(new ToastOption()
+						{
+							Category = ToastCategory.Error,
+							Title = "失败通知",
+							Content = "该用户已标记为删除！"
+						});
+
+					return false;
+				}
+				else
+				{
+					await ManagerDb.UpdateUser(CurrentUser, add_user);
+				}
+			}
+			else
+			{
+				await ManagerDb.CreateUsers(CurrentUser, [add_user]);
+			}
+
+			await QueryData();
+
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Success,
+					Title = "成功通知",
+					Content = "添加新用户成功！"
+				});
+
+			StateHasChanged();
+
+			return true;
+		},
+		(Dictionary<string, object> m) =>
+		{
+			m["User"] = add_user;
+			m["ListRole"] = list_role;
+		},
+		(DialogOption op) =>
+		{
+			op.Size = Size.Medium;
+		});
+
+		await Task.Delay(1);
+	}
+
+	// 更新当前选中用户
+	async Task<bool> OnSaveAsync(User user, ItemChangedType item_changed_type)
+	{
+		if (ItemChangedType.Add == item_changed_type && user.Role == RoleType.Agent)
+		{
+			if (ManagerSession.User.AgentParents.Count > 0)
+			{
+				user.AgentParents.AddRange(ManagerSession.User.AgentParents);
+			}
+
+			if (ManagerSession.User.AgentId > 0)
+			{
+				user.AgentParents.Add(ManagerSession.User.AgentId);
+			}
+		}
+
+		if (string.IsNullOrEmpty(user.Password))
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "失败通知",
+					Content = "密码不可以为空！"
+				});
+
+			return false;
+		}
+
+		if (string.IsNullOrEmpty(user.DisplayName))
+		{
+			user.DisplayName = user.UserName;
+		}
+
+		var user2 = await ManagerDb.GetUserByUserName(user.UserName, true);
+
+		if (user2 != null)
+		{
+			if (user2.IsDelete)
+			{
+				// 该用户已标记为删除，不可以被更新
+
+				await ToastService.Show(new ToastOption()
+					{
+						Category = ToastCategory.Error,
+						Title = "失败通知",
+						Content = "用户名重复，请修改用户名！"
+					});
+
+				return false;
+			}
+			else
+			{
+				await ManagerDb.UpdateUser(CurrentUser, user);
+			}
+		}
+		else
+		{
+			await ManagerDb.CreateUsers(CurrentUser, [user]);
+		}
+
+		await QueryData();
+
+		return true;
+	}
+
+	// 删除当前选中用户
+	async Task<bool> OnDeleteAsync(IEnumerable<User> users)
+	{
+		await ManagerDb.DeleteUsers(CurrentUser, users.ToList());
+
+		await QueryData();
+
+		return true;
+	}
+}

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Configurations>Debug;Release</Configurations>
+		<TargetFramework>net9.0</TargetFramework>
+		<DefineConstants>TRACE;ENABLE_FSM</DefineConstants>
+		<RootNamespace>DEF</RootNamespace>
+		<Product>DEF.Common</Product>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<NoWarn>CS8981;CS0168;1701;1702;IDE1006</NoWarn>
+		<DefineConstants>UNITY_DOTSPLAYER</DefineConstants>
+		<OutDir>../../_Tmp/DEF.Common.Mathematics/bin</OutDir>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="Unity.Mathematics.asmdef" />
+		<None Remove="*.meta" />
+		<None Remove="*/*.meta" />
+		<None Remove="*/*/*.cs.meta" />
+		<None Remove="*/*/*/*.cs.meta" />
+	</ItemGroup>
+
+</Project>

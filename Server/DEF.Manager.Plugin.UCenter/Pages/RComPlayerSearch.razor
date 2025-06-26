@@ -1,0 +1,62 @@
+﻿@inject ManagerUCenter ManagerUCenter
+
+<BootstrapInputGroup>
+    <BootstrapInput PlaceHolder="请输入 昵称 或 UID" @bind-Value="@InputPlayerStr" @oninput="HandleInputChange" />
+    <Checkbox TValue="bool" DisplayText="按UID" ShowAfterLabel="true" Color="Color.Success" @bind-Value="@IsUidMode" />
+    <Button IsOutline="true" @onclick="Click">查询玩家</Button>
+    <BootstrapInputGroupLabel Width="250" DisplayText="@($"{PlayerInfo?.PlayerNickName}[{PlayerInfo?.PlayerUid}]")" />
+</BootstrapInputGroup>
+
+@code {
+    [Parameter]
+    public EventCallback OnPlayerSearch { get; set; }
+    string InputPlayerStr { get; set; }
+    bool IsUidMode { get; set; } = true;
+
+    public UCenterPlayerInfo PlayerInfo { get; set; }
+
+    async Task Click()
+    {
+        if (string.IsNullOrEmpty(InputPlayerStr))
+        {
+            PlayerInfo = null;
+            return;
+        }
+        if(IsUidMode)
+        {
+            await SearchByUid();
+        }
+        else
+        {
+            await SearchByNickName();
+        }
+    }
+
+    void HandleInputChange(ChangeEventArgs e)
+    {
+        var new_value = e.Value.ToString();
+        if (string.IsNullOrEmpty(new_value))
+            PlayerInfo = null;
+    }
+
+    async Task SearchByUid()
+    {
+        bool t = long.TryParse(InputPlayerStr, out long uid);
+        if (!t)
+            return;
+
+        PlayerInfo = await ManagerUCenter.GetPlayerInfoByUId(uid);
+        await OnPlayerSearch.InvokeAsync();
+    }
+
+    async Task SearchByNickName()
+    {
+        if (string.IsNullOrEmpty(InputPlayerStr))
+        {
+            PlayerInfo = null;
+            return;
+        }
+        PlayerInfo = await ManagerUCenter.GetPlayerInfoByNickName(InputPlayerStr);
+        await OnPlayerSearch.InvokeAsync();
+    }
+}

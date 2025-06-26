@@ -1,0 +1,47 @@
+{
+	"Service": {
+		"ServiceName": "DEF.Gateway",
+		"OrleansGatewayPort": 10001,
+		"OrleansSiloPort": 10002,
+		"MongoDBConnectString": "mongodb://localhost:27017",
+		"MongoDBName": "Gateway"
+	},
+	"ServiceClient": {
+		"ServiceDiscoverListenServices": [
+			{
+				"ServiceName": "DEF.CCenter",
+				"OrleansGatewayPort": 10003,
+				"AssemblyInterfacePath": "",
+				"AssemblyInterfaceName": "",
+				"IsStateful": false
+			},
+			{
+				"ServiceName": "DEF.UCenter",
+				"OrleansGatewayPort": 10012,
+				"AssemblyInterfacePath": "",
+				"AssemblyInterfaceName": "",
+				"IsStateful": false
+			},
+			{
+				"ServiceName": "Guaji",
+				"OrleansGatewayPort": 10051,
+				"AssemblyInterfacePath": "",
+				"AssemblyInterfaceName": "",
+				"IsStateful": true
+			}
+		]
+	},
+	"DEF.Gateway": {
+		"EnableAuth": true,
+		"LogFileName": "Gateway",
+		"TcpServer": "WebSocket",
+		"TcpServerTimeout": 10,
+		"TcpServerTimeoutForDebug": 3600,
+		"ListenPortHttp": 5000,
+		"ListenPortHttps": 5001,
+		"ListenPortTcp": 5002,
+		"SslFileName": "guaji-proshanghai.cragon.cn.pfx",
+		"SslPwd": "osxk7pa4",
+		"AppId4UCenter": "Guaji"
+	}
+}

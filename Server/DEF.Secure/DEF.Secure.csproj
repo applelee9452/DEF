@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>DEF</RootNamespace>
+		<Product>DEF</Product>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Polly.RateLimiting" Version="8.6.1" />
+	</ItemGroup>
+
+</Project>

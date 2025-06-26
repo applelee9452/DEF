@@ -1,0 +1,48 @@
+﻿@using System.Text
+@inject ManagerIM ManagerIM
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ToastService ToastService
+
+<input type="number" @bind="Input_ID" placeholder="Enter Player ID" />
+<button @onclick="GetPlayerInfo">Get Player Info</button>
+
+@if (PlayerInfo != null)
+{
+	<div>
+		<p>GUID: @PlayerInfo.PlayerGuid</p>
+		<p>Name: @PlayerInfo.NickName</p>
+		<p>UID : @PlayerInfo.UId</p>
+	</div>
+}
+
+@code
+{
+	int Input_ID { get; set; }
+	PlayerInfo PlayerInfo { get; set; }
+
+	async Task GetPlayerInfo()
+	{
+		PlayerInfo player_info = null;
+		if (player_info is null)
+		{
+			await ToastService.Show(new ToastOption()
+				{
+					Category = ToastCategory.Error,
+					Title = "没找到",
+					Content = $"没找到"
+				});
+			return;
+		}
+
+		PlayerInfo = player_info;
+
+		await ToastService.Show(new ToastOption()
+			{
+				Category = ToastCategory.Error,
+				Title = "PlayerInfo",
+				Content = $"player_info {player_info.NickName}"
+			});
+
+		return;
+	}
+}

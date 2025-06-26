@@ -1,0 +1,51 @@
+{
+	"Service": {
+		"ServiceName": "DEF.UCenter",
+		"OrleansGatewayPort": 10012,
+		"OrleansSiloPort": 10013,
+		"MongoDBConnectString": "mongodb://localhost:27017",
+		"MongoDBName": "UCenter"
+	},
+	"ServiceClient": {
+		"ServiceDiscoverListenServices": []
+	},
+	"DEF.UCenter": {
+		"LogFileName": "UCenter",
+		"EnableGuestAccess": true,
+		"ImageContainerName": "{0}/UCenter/Images/",
+		"ImageDefaultProfileImageForMaleBlobName": "default_profile_image_male.jpg",
+		"ImageDefaultProfileThumbnailForMaleBlobName": "default_profile_thumbnail_male.jpg",
+		"ImageDefaultProfileImageForFemaleBlobName": "default_profile_image_female.jpg",
+		"ImageDefaultProfileThumbnailForFemaleBlobName": "default_profile_thumbnail_female.jpg",
+		"ImageProfileImageForBlobNameTemplate": "{0}_image.jpg",
+		"ImageProfileThumbnailForBlobNameTemplate": "{0}_thumbnail.jpg",
+		"ImageMaxThumbnailWidth": 128,
+		"ImageMaxThumbnailHeight": 128,
+		"StorageType": "Storage.Ali",
+		"StorageAliOssAccessKeyId": "",
+		"StorageAliOssAccessKeySecret": "",
+		"StorageAliOssEndpoint": "",
+		"StoragePrimaryStorageConnectionString": "DefaultEndpointsProtocol=http;AccountName=;AccountKey=",
+		"StorageSecondaryStorageConnectionString": "",
+		"QCloudSmsAppId": "a",
+		"QCloudSmsAppKey": "b",
+		"IdCardCheckEnable": true,
+		"IdCardCheckAppCode": "",
+		"CorsEnable": "",
+		"FacebookAppId": "",
+		"FacebookSecret": "",
+		"FacebookAccessToken": "|",
+		"FacebookGetAccessTokenUrl": "https://graph.facebook.com/oauth/access_token?client_id={0}&client_secret={1}&grant_type=client_credentials",
+		"FacebookAuthUrl": "https://graph.facebook.com/debug_token?input_token={0}&access_token={1}|{2}",
+		"FacebookGetUserInfoUrl": "https://graph.facebook.com/{0}?fields=id,name,gender,friends&access_token={1}|{2}",
+		"FacebookGetSmallHeadImageUrl": "https://graph.facebook.com/{0}/picture?type=normal",
+		"FacebookGetBigHeadImageUrl": "https://graph.facebook.com/{0}/picture?type=large",
+		"AppStoreSandbox":false,
+		"GooglePayTimingGetAccessToken":true,
+		"GooglePayClientId":".apps.googleusercontent.com",
+		"GooglePayClientSecret":"",
+		"GooglePayRefreshToken":"",
+		"GooglePayVerifyUrl":"https://www.googleapis.com/androidpublisher/v3/applications/{0}/purchases/products/{1}/tokens/{2}?access_token={3}",
+		"GooglePayGetAccessTokenUrl":"https://accounts.google.com/o/oauth2/token"
+	}
+}

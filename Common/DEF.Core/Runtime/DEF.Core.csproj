@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Configurations>Debug;Release</Configurations>
+		<TargetFramework>net9.0</TargetFramework>
+		<DefineConstants>TRACE;ENABLE_FSM</DefineConstants>
+		<RootNamespace>DEF</RootNamespace>
+		<Product>DEF.Core</Product>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<NoWarn>CS0168;1701;1702;IDE1006</NoWarn>
+		<BaseOutputPath>..\..\..\_Tmp\DEF.Core\bin</BaseOutputPath>
+		<OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+		<!--<CompilerGeneratedFilesOutputPath>.\Generated</CompilerGeneratedFilesOutputPath>-->
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="DEF.Unity\Netly\**" />
+		<Compile Remove="DEF.Unity\SuperSocketUnityClient\**" />
+		<Compile Remove="obj\**" />
+		<Compile Remove="**\obj\**" />
+		<EmbeddedResource Remove="DEF.Unity\Netly\**" />
+		<EmbeddedResource Remove="DEF.Unity\SuperSocketUnityClient\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<EmbeddedResource Remove="**\obj\**" />
+		<None Remove="DEF.Unity\Netly\**" />
+		<None Remove="DEF.Unity\SuperSocketUnityClient\**" />
+		<None Remove="obj\**" />
+		<None Remove="**\obj\**" />
+		<None Remove=".\**\*.meta" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DotNetty.Codecs" Version="0.7.6" />
+		<PackageReference Include="LitJson" Version="0.19.0" />
+		<PackageReference Include="MemoryPack" Version="1.21.4" />
+		<PackageReference Include="MemoryPack.Streaming" Version="1.21.4" />
+		<PackageReference Include="MongoDB.Bson" Version="3.4.0" />
+		<PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="protobuf-net" Version="3.2.52" />
+		<PackageReference Include="System.Text.Json" Version="9.0.6" />
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Orleans.Analyzers" Version="9.1.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Orleans.Sdk" Version="9.1.2" />
+		<PackageReference Include="LiteDB" Version="5.0.21" />
+		<PackageReference Include="YamlDotNet" Version="16.3.0" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Core\DotRecast.Core.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Detour.Crowd\DotRecast.Detour.Crowd.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Detour.Dynamic\DotRecast.Detour.Dynamic.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Detour.Extras\DotRecast.Detour.Extras.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Detour.TileCache\DotRecast.Detour.TileCache.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Detour\DotRecast.Detour.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Recast.Toolset\DotRecast.Recast.Toolset.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.DotRecast\Runtime\DotRecast.Recast\DotRecast.Recast.csproj" />
+		<ProjectReference Include="..\..\DEF.CodeGenerator\DEF.CodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<PackageReference Include="MemoryPack.Generator" Version="1.21.4" OutputItemType="Analyzer" ReferenceOutputAssembly="false">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<ProjectReference Include="..\..\DEF.Common.Kcp\Runtime\Kcp.csproj" />
+		<ProjectReference Include="..\..\DEF.Common.Mathematics\Unity.Mathematics.csproj" />
+	</ItemGroup>
+
+</Project>
