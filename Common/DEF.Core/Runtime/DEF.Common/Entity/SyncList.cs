@@ -92,7 +92,7 @@ namespace DEF
             ListItem.AddRange(collection);
         }
 
-        public int BinarySearch(int index, int count, T item, IComparer<T>? comparer)
+        public int BinarySearch(int index, int count, T item, IComparer<T> comparer)
         {
             return ListItem.BinarySearch(index, count, item, comparer);
         }
@@ -102,7 +102,7 @@ namespace DEF
             return ListItem.BinarySearch(item);
         }
 
-        public int BinarySearch(T item, IComparer<T>? comparer)
+        public int BinarySearch(T item, IComparer<T> comparer)
         {
             return ListItem.BinarySearch(item, comparer);
         }
@@ -157,7 +157,7 @@ namespace DEF
             return ListItem.FindIndex(match);
         }
 
-        public T? FindLast(Predicate<T> match)
+        public T FindLast(Predicate<T> match)
         {
             return ListItem.FindLast(match);
         }
@@ -257,7 +257,7 @@ namespace DEF
             ListItem.Reverse();
         }
 
-        public void Sort(IComparer<T>? comparer)
+        public void Sort(IComparer<T> comparer)
         {
             ListItem.Sort(comparer);
         }
@@ -267,7 +267,7 @@ namespace DEF
             ListItem.Sort(comparison);
         }
 
-        public void Sort(int index, int count, IComparer<T>? comparer)
+        public void Sort(int index, int count, IComparer<T> comparer)
         {
             ListItem.Sort(index, count, comparer);
         }

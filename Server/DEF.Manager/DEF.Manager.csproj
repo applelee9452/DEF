@@ -19,14 +19,14 @@
 
 	<ItemGroup>
 		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-		<PackageReference Include="BootstrapBlazor" Version="9.7.4" />
-		<PackageReference Include="BootstrapBlazor.Chart" Version="9.0.0" />
-		<PackageReference Include="BootstrapBlazor.FontAwesome" Version="9.0.2" />
-		<PackageReference Include="BootstrapBlazor.TableExport" Version="9.2.6" />
+		<PackageReference Include="BootstrapBlazor" Version="9.11.1" />
+		<PackageReference Include="BootstrapBlazor.Chart" Version="9.0.3" />
+		<PackageReference Include="BootstrapBlazor.FontAwesome" Version="9.1.2" />
+		<PackageReference Include="BootstrapBlazor.TableExport" Version="9.2.7" />
 		<PackageReference Include="BlazorInputFile" Version="0.2.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.12.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.12.0" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />

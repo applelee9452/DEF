@@ -8,7 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BootstrapBlazor" Version="9.7.4" />
+		<PackageReference Include="BootstrapBlazor" Version="9.11.1" />
 		<PackageReference Include="BootstrapBlazor.BarCode" Version="9.0.1" />
 		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
 	</ItemGroup>
