@@ -30,14 +30,14 @@
 		<PackageReference Include="OrleansDashboard" Version="8.2.0" />
 		<PackageReference Include="Serilog.Sinks.OpenObserve-KKP" Version="1.0.6" />
 		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
-		<PackageReference Include="StackExchange.Redis" Version="2.9.25" />
+		<PackageReference Include="StackExchange.Redis" Version="2.9.32" />
 		<PackageReference Include="ZooKeeperNetEx" Version="3.4.12.4" />
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.10" />
 		<PackageReference Include="Microsoft.Orleans.Analyzers" Version="9.2.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
