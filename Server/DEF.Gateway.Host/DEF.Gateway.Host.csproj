@@ -43,7 +43,7 @@
 		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-		<PackageReference Include="Serilog.Sinks.MongoDB" Version="7.1.0" />
+		<PackageReference Include="Serilog.Sinks.MongoDB" Version="7.2.0" />
 		<PackageReference Include="SuperSocket" Version="2.0.2" />
 		<PackageReference Include="SuperSocket.Channel" Version="2.0.0-beta.11" />
 		<PackageReference Include="SuperSocket.Server" Version="2.0.2" />
